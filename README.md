@@ -11,13 +11,13 @@
 ## インストール
 
 ```bash
-npm install -g kuuga
+npm install -g @frourio/kuuga
 ```
 
 または、プロジェクト内で：
 
 ```bash
-npm install kuuga
+npm install @frourio/kuuga
 ```
 
 ## 使用方法

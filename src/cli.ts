@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { init } from "./commands/init";
-import { validate } from "./commands/validate";
-import { build } from "./commands/build";
-import { pin } from "./commands/pin";
-import { publish } from "./commands/publish";
+import { init } from "./commands/init.js";
+import { validate } from "./commands/validate.js";
+import { build } from "./commands/build.js";
+import { pin } from "./commands/pin.js";
+import { publish } from "./commands/publish.js";
 
 const program = new Command();
 

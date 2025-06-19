@@ -22,6 +22,9 @@
     "dist",
     "llms-full.txt"
   ],
+  "exports": {
+    ".": "./dist/cli.js"
+  },
   "keywords": [
     "kuuga",
     "cli",
