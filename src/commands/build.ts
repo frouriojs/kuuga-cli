@@ -14,11 +14,11 @@ export async function build(dir: string) {
     const meta = JSON.parse(metaContent);
     const version = meta.version;
     
-    if (!version) {
+    if (version === undefined) {
         throw new Error("version not found in meta.json");
     }
     
-    const outputPath = path.resolve(process.cwd(), dir, `../.out/${path.basename(dir)}.${version}.zip`);
+    const outputPath = path.resolve(process.cwd(), `out/${path.basename(dir)}/${path.basename(dir)}.${version}.zip`);
 
     const output = fs.createWriteStream(outputPath);
     const archive = archiver("zip", {
