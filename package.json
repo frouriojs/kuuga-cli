@@ -1,0 +1,41 @@
+{
+  "name": "@frourio/kuuga",
+  "version": "0.0.0",
+  "description": "Knowledge structure protocol CLI for KUUGA",
+  "bin": {
+    "kuuga": "./dist/bin/cli.js"
+  },
+  "type": "module",
+  "author": "Solufa",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/bin/cli.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "homepage": "https://github.com/frouriojs/kuuga#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frouriojs/kuuga.git"
+  },
+  "files": [
+    "dist",
+    "llms-full.txt"
+  ],
+  "keywords": [
+    "kuuga",
+    "cli",
+    "ipfs"
+  ],
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "commander": "^14.0.0",
+    "fs-extra": "^11.3.0",
+    "multiformats": "^13.3.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "typescript": "^5.7.3"
+  }
+}
