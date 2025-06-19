@@ -3,15 +3,14 @@
   "version": "0.0.0",
   "description": "Knowledge structure protocol CLI for KUUGA",
   "bin": {
-    "kuuga": "./dist/bin/cli.js"
+    "kuuga": "./dist/cli.js"
   },
   "type": "module",
   "author": "Solufa",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/cli.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/bin/cli.js",
     "typecheck": "tsc --noEmit"
   },
   "homepage": "https://github.com/frouriojs/kuuga#readme",
@@ -35,6 +34,8 @@
     "multiformats": "^13.3.7"
   },
   "devDependencies": {
+    "@types/archiver": "^6.0.3",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.0.3",
     "typescript": "^5.7.3"
   }

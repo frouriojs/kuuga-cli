@@ -1,12 +1,8 @@
-import { Command } from "commander";
 import fs from "fs";
 import path from "path";
 import archiver from "archiver";
 
-export const buildCommand = new Command("build")
-  .argument("dir", "論文ディレクトリ名")
-  .description("論文をZIPにまとめる")
-  .action(async (dir) => {
+export async function build(dir: string) {
     const fullPath = path.resolve(process.cwd(), dir);
     const outputPath = path.resolve(process.cwd(), `${path.basename(dir)}.kuuga.zip`);
 
@@ -27,4 +23,4 @@ export const buildCommand = new Command("build")
     archive.pipe(output);
     archive.directory(fullPath + "/", false);
     await archive.finalize();
-  });
+}

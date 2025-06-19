@@ -1,11 +1,7 @@
-import { Command } from "commander";
 import fs from "fs";
 import path from "path";
 
-export const validateCommand = new Command("validate")
-  .argument("dir", "論文ディレクトリ名")
-  .description("論文の構造とメタデータの整合性を検証する")
-  .action((dir) => {
+export function validate(dir: string) {
     const fullPath = path.resolve(process.cwd(), dir);
     const requiredFiles = ["main.md", "meta.json", "manifest.json"];
     let hasError = false;
@@ -23,7 +19,7 @@ export const validateCommand = new Command("validate")
     const metaPath = path.join(fullPath, "meta.json");
     const manifestPath = path.join(fullPath, "manifest.json");
 
-    let meta, manifest;
+    let meta: any, manifest: any;
     try {
       meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
       manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
@@ -51,4 +47,4 @@ export const validateCommand = new Command("validate")
 
     if (hasError) process.exit(1);
     console.log("✅ 検証成功: meta.json と manifest.json は整合しています");
-  });
+}

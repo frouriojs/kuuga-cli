@@ -1,59 +1,69 @@
 # KUUGA CLI
 
-**KUUGA** は、知識の構造を未来に保存するための非中央集権プロトコルです。  
-この CLI ツールは、KUUGA 論文を作成・検証・封入・公開するための最小インターフェースを提供します。
+宇宙スケールの知の保存を目的としたプロトコル「KUUGA」のCLIツールです。論文をMarkdownとJSONで管理し、IPFSへの公開と永続化を支援します。
 
-## 📦 インストール
+## 特徴
+- MarkdownとJSONによるシンプルな論文管理
+- Gitモノレポと連携したバージョン管理
+- IPFSネットワークへの自動公開
+- 引用関係をもとにしたピン留めルールの推奨
 
-```bash
-npm install -g kuuga-cli
-````
-
-## 🧪 使い方
-
-### 1. テンプレートの作成
+## インストール
 
 ```bash
-kuuga init my-paper
+npm install -g kuuga
 ```
 
-`my-paper/` に以下の構造を生成します：
-
-my-paper/
-├── main.md         # 論文本文
-├── meta.json       # メタデータ（構造・著者等）
-├── README.md       # 説明文
-└── manifest.json   # バージョン情報
-
-### 2. 構造の検証
+または、プロジェクト内で：
 
 ```bash
-kuuga validate my-paper
+npm install kuuga
 ```
 
-* ファイルの存在確認
-* `meta.json` ↔ `manifest.json` のバージョン整合性
-* 必須項目（title, authors 等）の存在検証
+## 使用方法
 
-### 3. ZIP生成（無圧縮）
+### 初期化
+新しい論文ディレクトリを生成します：
 
 ```bash
-kuuga build my-paper
-# => my-paper.kuuga.zip が生成される
+kuuga init kuuga/my-paper
 ```
 
-### 4. IPFS CIDの計算
+生成されるファイル：
+
+```
+kuuga/my-paper/
+├── main.md         # 本文（Markdown）
+├── meta.json       # 論文のメタ情報
+├── manifest.json   # バージョン情報
+├── README.md       # 論文用Readme
+├── Dockerfile      # IPFSノード用
+├── docker/publish.sh
+└── .github/workflows/commit-zips.yml
+```
+
+### 検証
+
+構成ファイルの整合性を検証します：
 
 ```bash
-kuuga publish my-paper.kuuga.zip
-# => IPFS CID (v1) が表示される
+kuuga validate kuuga/my-paper
 ```
 
-## 🎯 プロトコル理念
+### ビルド
 
-KUUGA は次の特徴を持ちます：
+ZIPを作成し、IPFSにアップロードする準備をします：
 
-* 起源論文から引用によって知識が構造化される
-* 論文はZIPで封入し、IPFSで共有・継承される
-* バージョンは `manifest.json` で管理し、改変は推奨されない
-* 起源論文は空文字で構成され、知識構造の始点を担う
+```bash
+kuuga build kuuga/my-paper
+```
+
+## 自動公開とピン留め（GitHub Actions + IPFSノード）
+
+- `main`ブランチにPushすると、GHAが差分を検知してZIPファイルを自動生成・コミットします。
+- Dockerコンテナ上の `publish.sh` スクリプトは以下を実行します：
+  - ZIPをIPFSに追加
+  - meta.json に記載された `references` をもとに引用論文をピン留め
+  - 論文自身もピン留め
+
+この仕組みにより、引用関係が壊れないようネットワーク全体での保存努力が促進されます。

@@ -1,13 +1,8 @@
-import { Command } from "commander";
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
-export const pinCommand = new Command("pin")
-  .argument("zipFile", "公開対象のZIPファイル")
-  .option("--recursive", "meta.jsonの引用先まで含めてピン留めする")
-  .description("ローカルのIPFSノードにZIPと引用先をピン留めする")
-  .action((zipFile, options) => {
+export function pin(zipFile: string, options?: { recursive?: boolean }) {
     const zipPath = path.resolve(process.cwd(), zipFile);
     if (!fs.existsSync(zipPath)) {
       console.error("❌ ZIPファイルが見つかりません");
@@ -25,7 +20,7 @@ export const pinCommand = new Command("pin")
       process.exit(1);
     }
 
-    if (options.recursive) {
+    if (options?.recursive) {
       const metaPath = path.join(path.dirname(zipPath), "meta.json");
       if (fs.existsSync(metaPath)) {
         const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
@@ -38,4 +33,4 @@ export const pinCommand = new Command("pin")
         }
       }
     }
-  });
+}

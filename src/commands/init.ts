@@ -8,14 +8,14 @@ import { githubWorkflowTemplate } from '../templates/githubWorkflowTemplate';
 import { dockerfileTemplate } from '../templates/dockerfileTemplate';
 import { publishScriptTemplate } from '../templates/publishScriptTemplate';
 
-export async function initPaper(paperPath: string, title: string, author: string) {
+export async function init(paperPath: string) {
   const fullPath = path.resolve(paperPath);
   await fs.ensureDir(fullPath);
 
   await fs.writeFile(path.join(fullPath, 'main.md'), mainTemplate);
-  await fs.writeFile(path.join(fullPath, 'meta.json'), metaTemplate(title, author));
+  await fs.writeFile(path.join(fullPath, 'meta.json'), metaTemplate('Sample Title', 'Sample Author'));
   await fs.writeFile(path.join(fullPath, 'manifest.json'), manifestTemplate);
-  await fs.writeFile(path.join(fullPath, 'README.md'), readmeTemplate(title));
+  await fs.writeFile(path.join(fullPath, 'README.md'), readmeTemplate('Sample Title'));
 
   const workflowDir = path.join(fullPath, '.github', 'workflows');
   await fs.ensureDir(workflowDir);
