@@ -4,8 +4,8 @@ import { githubWorkflowTemplate } from '../templates/githubWorkflowTemplate.js';
 import { dockerfileTemplate } from '../templates/dockerfileTemplate.js';
 import { publishScriptTemplate } from '../templates/publishScriptTemplate.js';
 
-export async function init(paperPath: string) {
-  const fullPath = path.resolve(paperPath);
+export async function init() {
+  const fullPath = path.resolve();
   const workflowDir = path.join(fullPath, '.github', 'workflows');
 
   await fs.ensureDir(workflowDir);

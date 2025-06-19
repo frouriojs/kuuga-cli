@@ -17,9 +17,8 @@ program
 
 program
   .command("init")
-  .argument("<dir>", "プロジェクトディレクトリを指定")
   .description("新しいKUUGAプロジェクトを初期化する")
-  .action((dir) => init(dir));
+  .action(init);
 
 program
   .command("add")
