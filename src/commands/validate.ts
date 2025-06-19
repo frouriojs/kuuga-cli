@@ -43,6 +43,11 @@ export function validate() {
                 hasError = true;
                 continue;
             }
+            
+            if (meta.version === undefined) {
+                console.error(`❌ ${paperDir}/meta.json に version がありません`);
+                hasError = true;
+            }
 
             if (!meta.title || typeof meta.title !== "string") {
                 console.error(`❌ ${paperDir}/meta.json に有効な title がありません`);

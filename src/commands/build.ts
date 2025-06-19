@@ -35,7 +35,7 @@ export async function build() {
         const meta = JSON.parse(metaContent);
         const version = meta.version;
         
-        if (!version) {
+        if (version === undefined) {
             console.error(`❌ ${paperDir}/meta.json に version がありません`);
             continue;
         }

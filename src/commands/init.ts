@@ -14,5 +14,5 @@ export async function init() {
   await fs.writeFile(path.join(fullPath, 'publish.sh'), publishScriptTemplate);
 
   console.log(`✅ Initialized kuuga project at ${fullPath}`);
-  console.log('📝 Use "kuuga add <dir>" to create a new paper directory');
+  console.log('📝 Use "kuuga add <name>" to create a new paper directory');
 }
