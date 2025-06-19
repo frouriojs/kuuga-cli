@@ -12,9 +12,9 @@ COPY . .
 RUN npm ci && npm run build
 RUN ipfs init
 
-COPY docker/publish.sh /publish.sh
+COPY publish.sh /publish.sh
 RUN chmod +x /publish.sh
 
-EXPOSE 49152
+EXPOSE 4001
 
 CMD sh -c "ipfs daemon & sleep 5 && /publish.sh"`;

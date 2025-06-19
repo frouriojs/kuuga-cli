@@ -2,6 +2,7 @@
 
 import { Command } from "commander";
 import { init } from "./commands/init.js";
+import { add } from "./commands/add.js";
 import { validate } from "./commands/validate.js";
 import { build } from "./commands/build.js";
 import { pin } from "./commands/pin.js";
@@ -16,9 +17,15 @@ program
 
 program
   .command("init")
-  .argument("<dir>", "論文ディレクトリを指定")
-  .description("新しい論文ディレクトリを初期化する")
+  .argument("<dir>", "プロジェクトディレクトリを指定")
+  .description("新しいKUUGAプロジェクトを初期化する")
   .action((dir) => init(dir));
+
+program
+  .command("add")
+  .argument("<dir>", "論文ディレクトリを指定")
+  .description("新しい論文ディレクトリを作成する")
+  .action((dir) => add(dir));
 
 program
   .command("validate")

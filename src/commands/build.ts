@@ -4,7 +4,21 @@ import archiver from "archiver";
 
 export async function build(dir: string) {
     const fullPath = path.resolve(process.cwd(), dir);
-    const outputPath = path.resolve(process.cwd(), `${path.basename(dir)}.kuuga.zip`);
+    
+    const metaPath = path.join(fullPath, "meta.json");
+    if (!fs.existsSync(metaPath)) {
+        throw new Error(`meta.json not found: ${metaPath}`);
+    }
+    
+    const metaContent = fs.readFileSync(metaPath, "utf-8");
+    const meta = JSON.parse(metaContent);
+    const version = meta.version;
+    
+    if (!version) {
+        throw new Error("version not found in meta.json");
+    }
+    
+    const outputPath = path.resolve(process.cwd(), dir, `../.out/${path.basename(dir)}.${version}.zip`);
 
     const output = fs.createWriteStream(outputPath);
     const archive = archiver("zip", {

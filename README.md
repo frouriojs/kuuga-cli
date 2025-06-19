@@ -22,24 +22,37 @@ npm install @frourio/kuuga
 
 ## 使用方法
 
-### 初期化
-新しい論文ディレクトリを生成します：
+### プロジェクト初期化
+新しいKUUGAプロジェクトを初期化します：
 
 ```bash
-kuuga init kuuga/my-paper
+kuuga init my-kuuga-project
 ```
 
 生成されるファイル：
 
 ```
-kuuga/my-paper/
+my-kuuga-project/
+├── Dockerfile      # IPFSノード用
+└── .github/workflows/commit-zips.yml
+```
+
+### 論文の追加
+プロジェクト内に新しい論文ディレクトリを作成します：
+
+```bash
+kuuga add papers/my-paper
+```
+
+生成されるファイル：
+
+```
+papers/my-paper/
 ├── main.md         # 本文（Markdown）
 ├── meta.json       # 論文のメタ情報
 ├── manifest.json   # バージョン情報
 ├── README.md       # 論文用Readme
-├── Dockerfile      # IPFSノード用
-├── docker/publish.sh
-└── .github/workflows/commit-zips.yml
+└── docker/publish.sh
 ```
 
 ### 検証
@@ -47,7 +60,7 @@ kuuga/my-paper/
 構成ファイルの整合性を検証します：
 
 ```bash
-kuuga validate kuuga/my-paper
+kuuga validate papers/my-paper
 ```
 
 ### ビルド
@@ -55,7 +68,7 @@ kuuga validate kuuga/my-paper
 ZIPを作成し、IPFSにアップロードする準備をします：
 
 ```bash
-kuuga build kuuga/my-paper
+kuuga build papers/my-paper
 ```
 
 ## 自動公開とピン留め（GitHub Actions + IPFSノード）
