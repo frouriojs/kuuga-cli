@@ -1,50 +1,64 @@
 import fs from "fs";
 import path from "path";
 
-export function validate(dir: string) {
-    const fullPath = path.resolve(process.cwd(), dir);
-    const requiredFiles = ["main.md", "meta.json", "manifest.json"];
+export function validate() {
+    const papersDir = path.resolve('papers');
+    
+    if (!fs.existsSync(papersDir)) {
+        console.error("❌ papers ディレクトリが見つかりません");
+        process.exit(1);
+    }
+
+    const paperDirs = fs.readdirSync(papersDir, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name);
+
+    if (paperDirs.length === 0) {
+        console.log("📝 papers ディレクトリに論文がありません");
+        return;
+    }
+
     let hasError = false;
+    const requiredFiles = ["main.md", "meta.json"];
 
-    for (const file of requiredFiles) {
-      const filePath = path.join(fullPath, file);
-      if (!fs.existsSync(filePath)) {
-        console.error(`❌ ファイルが見つかりません: ${file}`);
-        hasError = true;
-      }
+    for (const paperDir of paperDirs) {
+        console.log(`🔍 検証中: ${paperDir}`);
+        const fullPath = path.join(papersDir, paperDir);
+
+        for (const file of requiredFiles) {
+            const filePath = path.join(fullPath, file);
+            if (!fs.existsSync(filePath)) {
+                console.error(`❌ ${paperDir}/${file} が見つかりません`);
+                hasError = true;
+            }
+        }
+
+        const metaPath = path.join(fullPath, "meta.json");
+        if (fs.existsSync(metaPath)) {
+            let meta: any;
+            try {
+                meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+            } catch (err) {
+                console.error(`❌ ${paperDir}/meta.json のパースに失敗:`, err);
+                hasError = true;
+                continue;
+            }
+
+            if (!meta.title || typeof meta.title !== "string") {
+                console.error(`❌ ${paperDir}/meta.json に有効な title がありません`);
+                hasError = true;
+            }
+
+            if (!Array.isArray(meta.authors) || meta.authors.length === 0) {
+                console.error(`❌ ${paperDir}/meta.json に authors が定義されていません`);
+                hasError = true;
+            }
+        }
     }
 
-    if (hasError) process.exit(1);
-
-    const metaPath = path.join(fullPath, "meta.json");
-    const manifestPath = path.join(fullPath, "manifest.json");
-
-    let meta: any, manifest: any;
-    try {
-      meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
-      manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-    } catch (err) {
-      console.error("❌ JSONファイルのパースに失敗しました:", err);
-      process.exit(1);
+    if (hasError) {
+        process.exit(1);
+    } else {
+        console.log("✅ すべての論文の検証が完了しました");
     }
-
-    if (meta.version !== manifest.version) {
-      console.error(
-        `❌ バージョン不一致: meta.json(${meta.version}) ≠ manifest.json(${manifest.version})`
-      );
-      hasError = true;
-    }
-
-    if (!meta.title || typeof meta.title !== "string") {
-      console.error("❌ meta.json に有効な title がありません");
-      hasError = true;
-    }
-
-    if (!Array.isArray(meta.authors) || meta.authors.length === 0) {
-      console.error("❌ meta.json に authors が定義されていません");
-      hasError = true;
-    }
-
-    if (hasError) process.exit(1);
-    console.log("✅ 検証成功: meta.json と manifest.json は整合しています");
 }

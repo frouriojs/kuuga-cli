@@ -12,8 +12,8 @@ const program = new Command();
 
 program
   .name("kuuga")
-  .description("KUUGA: 宇宙スケールの知の保存プロトコル CLI")
-  .version("0.1.0");
+  .description("KUUGA CLI")
+  .version(process.env.npm_package_version ?? '');
 
 program
   .command("init")
@@ -22,33 +22,28 @@ program
 
 program
   .command("add")
-  .argument("<dir>", "論文ディレクトリを指定")
-  .description("新しい論文ディレクトリを作成する")
-  .action((dir) => add(dir));
+  .argument("<name>", "論文名を指定")
+  .description("papers配下に新しい論文ディレクトリを作成する")
+  .action(add);
 
 program
   .command("validate")
-  .argument("<dir>", "論文ディレクトリ")
-  .description("論文の構成ファイルを検証する")
-  .action((dir) => validate(dir));
+  .description("papers配下のすべての論文を検証する")
+  .action(validate);
 
 program
   .command("build")
-  .argument("<dir>", "論文ディレクトリ")
-  .description("論文ディレクトリをZIPにパッケージする")
-  .action((dir) => build(dir));
+  .description("papers配下のすべての論文をZIPにパッケージする")
+  .action(build);
 
 program
   .command("pin")
-  .argument("<zipFile>", "公開対象のZIPファイル")
-  .option("--recursive", "meta.jsonの引用先まで含めてピン留めする")
-  .description("ローカルのIPFSノードにZIPと引用先をピン留めする")
-  .action((zipFile, options) => pin(zipFile, options));
+  .description("outディレクトリのZIPファイルをIPFSにピン留めする")
+  .action(pin);
 
 program
   .command("publish")
-  .argument("<zipFile>", "ビルド済みZIPファイル名")
-  .description("ZIPファイルのIPFS CID（v1）を計算する")
-  .action((zipFile) => publish(zipFile));
+  .description("outディレクトリのZIPファイルのIPFS CIDを計算する")
+  .action(publish);
 
 program.parse();

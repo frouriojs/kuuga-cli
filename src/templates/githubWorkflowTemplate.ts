@@ -3,10 +3,6 @@ export const githubWorkflowTemplate = `name: Auto Commit ZIPs on Version Change
 on:
   push:
     branches: [main]
-    paths:
-      - '**/main.md'
-      - '**/meta.json'
-      - '**/manifest.json'
 
 jobs:
   build-and-commit:
@@ -20,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 22
 
       - name: Install deps
         run: npm ci
@@ -28,28 +24,15 @@ jobs:
       - name: Build CLI
         run: npm run build
 
-      - name: Detect changes
-        id: changes
-        run: |
-          MODIFIED_DIRS=$(git diff --name-only HEAD~1 HEAD | grep -E '^(kuuga/.+/)(main\\.md|meta\\.json|manifest\\.json)' | cut -d/ -f1-2 | uniq)
-          echo "modified=$MODIFIED_DIRS" >> $GITHUB_OUTPUT
-
-      - name: Build and Save ZIPs
-        if: steps.changes.outputs.modified != ''
-        run: |
-          for dir in \${{ steps.changes.outputs.modified }}; do
-            echo "📦 Processing $dir"
-            node dist/bin/cli.js validate "$dir"
-            node dist/bin/cli.js build "$dir"
-            ZIP_NAME=$(jq -r '.version' "$dir/manifest.json")
-            mv "$dir.kuuga.zip" "$dir/v\${ZIP_NAME}.kuuga.zip"
-            git add "$dir/v\${ZIP_NAME}.kuuga.zip"
-          done
-
       - name: Commit ZIPs
-        if: steps.changes.outputs.modified != ''
         run: |
           git config user.name "kuuga-bot"
           git config user.email "actions@github.com"
-          git commit -m "chore: add updated ZIPs"
-          git push`;
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git add .
+            git commit -m "chore: add updated ZIPs"
+            git push
+          fi
+`;

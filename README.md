@@ -34,14 +34,15 @@ kuuga init my-kuuga-project
 ```
 my-kuuga-project/
 ├── Dockerfile      # IPFSノード用
+├── publish.sh      # IPFS自動公開スクリプト
 └── .github/workflows/commit-zips.yml
 ```
 
 ### 論文の追加
-プロジェクト内に新しい論文ディレクトリを作成します：
+papers配下に新しい論文ディレクトリを作成します：
 
 ```bash
-kuuga add papers/my-paper
+kuuga add my-paper
 ```
 
 生成されるファイル：
@@ -50,33 +51,48 @@ kuuga add papers/my-paper
 papers/my-paper/
 ├── main.md         # 本文（Markdown）
 ├── meta.json       # 論文のメタ情報
-├── manifest.json   # バージョン情報
-├── README.md       # 論文用Readme
-└── docker/publish.sh
+└── README.md       # 論文用Readme
 ```
 
 ### 検証
 
-構成ファイルの整合性を検証します：
+papers配下のすべての論文の構成ファイルを一括検証します：
 
 ```bash
-kuuga validate papers/my-paper
+kuuga validate
 ```
 
 ### ビルド
 
-ZIPを作成し、IPFSにアップロードする準備をします：
+papers配下のすべての論文をZIPファイルに一括パッケージします：
 
 ```bash
-kuuga build papers/my-paper
+kuuga build
+```
+
+ZIPファイルは`out/`ディレクトリに`{論文名}.{バージョン}.zip`の形式で作成されます。
+
+### ピン留め
+
+outディレクトリのZIPファイルをIPFSにピン留めし、引用先もピン留めします：
+
+```bash
+kuuga pin
+```
+
+### CID計算
+
+outディレクトリのZIPファイルのIPFS CIDを計算します：
+
+```bash
+kuuga publish
 ```
 
 ## 自動公開とピン留め（GitHub Actions + IPFSノード）
 
 - `main`ブランチにPushすると、GHAが差分を検知してZIPファイルを自動生成・コミットします。
-- Dockerコンテナ上の `publish.sh` スクリプトは以下を実行します：
-  - ZIPをIPFSに追加
-  - meta.json に記載された `references` をもとに引用論文をピン留め
-  - 論文自身もピン留め
+- IPFSノードが起動すると、`publish.sh` スクリプトが以下を実行します：
+  - outディレクトリ内のすべてのZIPファイルをIPFSに追加・ピン留め
+  - papers配下の各meta.jsonに記載された `references` をもとに引用論文をピン留め
 
 この仕組みにより、引用関係が壊れないようネットワーク全体での保存努力が促進されます。
