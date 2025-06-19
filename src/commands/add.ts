@@ -11,8 +11,8 @@ export async function add(paperName: string) {
   await fs.ensureDir(fullPath);
 
   await fs.writeFile(path.join(fullPath, 'main.md'), mainTemplate);
-  await fs.writeFile(path.join(fullPath, 'meta.json'), metaTemplate('Sample Title', 'Sample Author'));
-  await fs.writeFile(path.join(fullPath, 'README.md'), readmeTemplate('Sample Title'));
+  await fs.writeFile(path.join(fullPath, 'meta.json'), metaTemplate);
+  await fs.writeFile(path.join(fullPath, 'README.md'), readmeTemplate);
 
   console.log(`✅ Created paper template at ${fullPath}`);
 }

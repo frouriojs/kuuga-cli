@@ -1,9 +1,10 @@
-export const metaTemplate = (title: string, author: string): string => `{
-  "title": "${title}",
+export const metaTemplate = `{
+  "title": "",
   "language": "earth:ja",
   "version": 1,
-  "authors": ["${author}"],
+  "description": "",
+  "authors": [],
+  "previousPaper": "ipfs://bafkreihbqzdxdvp52nsjyu5qzvaiqkm6ssispfbyqg3ea6wffnxamt6dz4",
   "references": [],
-  "description": "この論文は KUUGA プロトコルの論文です",
   "license": "CC0-1.0"
 }`;

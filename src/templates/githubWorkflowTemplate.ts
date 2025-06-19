@@ -28,7 +28,7 @@ jobs:
         run: |
           git config user.name "kuuga-bot"
           git config user.email "actions@github.com"
-          if git diff --quiet && git diff --cached --quiet; then
+          if [ -z "$(git status --porcelain)" ]; then
             echo "No changes to commit"
           else
             git add .
