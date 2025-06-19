@@ -1,12 +1,12 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { mainTemplate } from '../templates/mainTemplate';
-import { metaTemplate } from '../templates/metaTemplate';
-import { manifestTemplate } from '../templates/manifestTemplate';
-import { readmeTemplate } from '../templates/readmeTemplate';
-import { githubWorkflowTemplate } from '../templates/githubWorkflowTemplate';
-import { dockerfileTemplate } from '../templates/dockerfileTemplate';
-import { publishScriptTemplate } from '../templates/publishScriptTemplate';
+import { mainTemplate } from '../templates/mainTemplate.js';
+import { metaTemplate } from '../templates/metaTemplate.js';
+import { manifestTemplate } from '../templates/manifestTemplate.js';
+import { readmeTemplate } from '../templates/readmeTemplate.js';
+import { githubWorkflowTemplate } from '../templates/githubWorkflowTemplate.js';
+import { dockerfileTemplate } from '../templates/dockerfileTemplate.js';
+import { publishScriptTemplate } from '../templates/publishScriptTemplate.js';
 
 export async function init(paperPath: string) {
   const fullPath = path.resolve(paperPath);
