@@ -32,7 +32,7 @@ export async function build() {
         
         const metaContent = fs.readFileSync(metaPath, "utf-8");
         const meta = JSON.parse(metaContent);
-        const version = meta.version;
+        const version: number | undefined = meta.version;
         
         if (version === undefined) {
             console.error(`❌ ${paperDir}/meta.json に version がありません`);
@@ -40,7 +40,7 @@ export async function build() {
         }
         
         // out/<name>/<version>/ 構造でディレクトリを作成
-        const outputPath = path.join(outDir, paperDir, version);
+        const outputPath = path.join(outDir, paperDir, version.toString());
         await fs.ensureDir(outputPath);
         
         // 論文ディレクトリの内容をコピー
