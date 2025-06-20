@@ -1,6 +1,5 @@
 import fs from "fs-extra";
 import path from "path";
-import archiver from "archiver";
 
 export async function build() {
     const papersDir = path.resolve('papers');
@@ -23,9 +22,9 @@ export async function build() {
 
     for (const paperDir of paperDirs) {
         console.log(`🔨 ビルド中: ${paperDir}`);
-        const fullPath = path.join(papersDir, paperDir);
+        const sourcePath = path.join(papersDir, paperDir);
         
-        const metaPath = path.join(fullPath, "meta.json");
+        const metaPath = path.join(sourcePath, "meta.json");
         if (!fs.existsSync(metaPath)) {
             console.error(`❌ ${paperDir}/meta.json が見つかりません`);
             continue;
@@ -40,25 +39,14 @@ export async function build() {
             continue;
         }
         
-        const outputPath = path.join(outDir, `${paperDir}.${version}.zip`);
-
-        const output = fs.createWriteStream(outputPath);
-        const archive = archiver("zip", {
-          zlib: { level: 0 }, // 無圧縮
-          store: true
-        });
-
-        output.on("close", () => {
-          console.log(`✅ ZIPファイルを作成: ${outputPath} (${archive.pointer()} bytes)`);
-        });
-
-        archive.on("error", (err) => {
-          console.error(`❌ ${paperDir} のアーカイブに失敗:`, err);
-        });
-
-        archive.pipe(output);
-        archive.directory(fullPath + "/", false);
-        await archive.finalize();
+        // out/<name>/<version>/ 構造でディレクトリを作成
+        const outputPath = path.join(outDir, paperDir, version);
+        await fs.ensureDir(outputPath);
+        
+        // 論文ディレクトリの内容をコピー
+        await fs.copy(sourcePath, outputPath);
+        
+        console.log(`✅ ディレクトリを作成: ${outputPath}`);
     }
     
     console.log("✅ すべての論文のビルドが完了しました");

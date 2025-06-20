@@ -2,10 +2,10 @@ export const publishScriptTemplate = `#!/bin/sh
 
 echo "🚀 IPFSノード準備中..."
 
-# outディレクトリ内のZIPファイルを公開
-find out -type f -name "*.zip" | while read zipfile; do
-  echo "📦 公開: $zipfile"
-  ipfs add --cid-version=1 --pin=true --raw-leaves=true "$zipfile"
+# outディレクトリ内の論文ディレクトリを再帰的に公開
+find out -mindepth 2 -maxdepth 2 -type d | while read paperdir; do
+  echo "📦 公開: $paperdir"
+  ipfs add --cid-version=1 --pin=true --recursive "$paperdir"
 done
 
 # 各論文のmeta.jsonから引用先とpreviousPaperをピン留め

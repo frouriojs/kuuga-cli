@@ -12,23 +12,36 @@ export async function publish() {
         process.exit(1);
     }
 
-    const zipFiles = fs.readdirSync(outDir)
-        .filter(file => file.endsWith('.zip'))
-        .map(file => path.join(outDir, file));
+    const paperDirs = fs.readdirSync(outDir, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name);
 
-    if (zipFiles.length === 0) {
-        console.log("📝 out ディレクトリにZIPファイルがありません");
+    if (paperDirs.length === 0) {
+        console.log("📝 out ディレクトリに論文がありません");
         return;
     }
 
-    for (const zipPath of zipFiles) {
-        console.log(`🔍 CID計算中: ${path.basename(zipPath)}`);
-        
-        const fileBuffer = fs.readFileSync(zipPath);
-        const hash = await sha256.digest(fileBuffer);
-        const cid = CID.create(1, raw.code, hash);
+    for (const paperDir of paperDirs) {
+        const paperPath = path.join(outDir, paperDir);
+        const versions = fs.readdirSync(paperPath, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+            .map(dirent => dirent.name);
 
-        console.log(`✅ ${path.basename(zipPath)} - IPFS CID (v1): ${cid.toString()}`);
+        for (const version of versions) {
+            const versionPath = path.join(paperPath, version);
+            console.log(`🔍 CID計算中: ${paperDir}/${version}`);
+            
+            // ディレクトリ全体のCIDを計算するため、メタファイルを作成
+            const metaPath = path.join(versionPath, "meta.json");
+            if (fs.existsSync(metaPath)) {
+                const metaContent = fs.readFileSync(metaPath, "utf-8");
+                const metaBuffer = Buffer.from(metaContent, 'utf-8');
+                const hash = await sha256.digest(metaBuffer);
+                const cid = CID.create(1, raw.code, hash);
+                
+                console.log(`✅ ${paperDir}/${version} - Meta CID (v1): ${cid.toString()}`);
+            }
+        }
     }
 
     console.log("✅ すべてのCID計算が完了しました");

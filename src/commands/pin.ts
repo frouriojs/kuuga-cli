@@ -10,25 +10,36 @@ export function pin() {
         process.exit(1);
     }
 
-    const zipFiles = fs.readdirSync(outDir)
-        .filter(file => file.endsWith('.zip'))
-        .map(file => path.join(outDir, file));
+    const paperDirs = fs.readdirSync(outDir, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name);
 
-    if (zipFiles.length === 0) {
-        console.log("📝 out ディレクトリにZIPファイルがありません");
+    if (paperDirs.length === 0) {
+        console.log("📝 out ディレクトリに論文がありません");
         return;
     }
 
-    // すべてのZIPファイルをピン留め
-    for (const zipPath of zipFiles) {
-        console.log(`📦 ピン留め中: ${path.basename(zipPath)}`);
-        try {
-            const output = execSync(`ipfs add --cid-version=1 --pin=true --raw-leaves=true "${zipPath}"`, {
-                encoding: "utf-8"
-            });
-            console.log(`✅ ピン留め成功: ${output.trim()}`);
-        } catch (err) {
-            console.error(`❌ ${path.basename(zipPath)} のピン留めに失敗:`, err);
+    // すべての論文ディレクトリをピン留め
+    for (const paperDir of paperDirs) {
+        const paperPath = path.join(outDir, paperDir);
+        const versions = fs.readdirSync(paperPath, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+            .map(dirent => dirent.name);
+
+        for (const version of versions) {
+            const versionPath = path.join(paperPath, version);
+            console.log(`📦 ピン留め中: ${paperDir}/${version}`);
+            
+            try {
+                const output = execSync(`ipfs add --cid-version=1 --pin=true --recursive "${versionPath}"`, {
+                    encoding: "utf-8"
+                });
+                const lines = output.trim().split('\n');
+                const lastLine = lines[lines.length - 1];
+                console.log(`✅ ピン留め成功: ${lastLine}`);
+            } catch (err) {
+                console.error(`❌ ${paperDir}/${version} のピン留めに失敗:`, err);
+            }
         }
     }
 
