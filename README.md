@@ -34,8 +34,7 @@ kuuga init my-kuuga-project
 ```
 my-kuuga-project/
 ├── Dockerfile      # IPFSノード用
-├── publish.sh      # IPFS自動公開スクリプト
-└── .github/workflows/commit-zips.yml
+└── .github/workflows/build-papers.yml
 ```
 
 ### 論文の追加
@@ -91,7 +90,7 @@ kuuga publish
 ## 自動公開とピン留め（GitHub Actions + IPFSノード）
 
 - `main`ブランチにPushすると、GHAが差分を検知して論文ディレクトリを自動生成・コミットします。
-- IPFSノードが起動すると、`publish.sh` スクリプトが以下を実行します：
+- IPFSノードが起動すると、`dist/publish.sh` スクリプトが以下を実行します：
   - outディレクトリ内のすべての論文ディレクトリをIPFSに再帰的に追加・ピン留め
   - papers配下の各meta.jsonに記載された `references` をもとに引用論文をピン留め
 

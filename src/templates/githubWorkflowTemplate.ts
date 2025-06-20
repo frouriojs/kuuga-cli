@@ -1,4 +1,4 @@
-export const githubWorkflowTemplate = `name: Auto Commit ZIPs on Version Change
+export const githubWorkflowTemplate = `name: Auto Build Papers on Version Change
 
 on:
   push:
@@ -24,15 +24,18 @@ jobs:
       - name: Build CLI
         run: npm run build
 
-      - name: Commit ZIPs
+      - name: Build Papers
+        run: npx kuuga build
+
+      - name: Commit Built Papers
         run: |
           git config user.name "kuuga-bot"
           git config user.email "actions@github.com"
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes to commit"
           else
-            git add .
-            git commit -m "chore: add updated ZIPs"
+            git add out/
+            git commit -m "chore: build papers to out directory"
             git push
           fi
 `;
