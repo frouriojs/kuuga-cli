@@ -17,9 +17,9 @@ RUN npm ci
 
 COPY . .
 RUN ipfs init
-RUN chmod +x ./node_modules/@frourio/kuuga/dist/publish.sh
+RUN chmod +x ./node_modules/kuuga-cli/dist/publish.sh
 
 EXPOSE 4001
 
-CMD sh -c "ipfs daemon & sleep 5 && ./node_modules/@frourio/kuuga/dist/publish.sh"
+CMD sh -c "ipfs daemon & sleep 5 && ./node_modules/kuuga-cli/dist/publish.sh"
 `;

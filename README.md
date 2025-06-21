@@ -11,13 +11,13 @@
 ## インストール
 
 ```bash
-npm install -g @frourio/kuuga
+npm install -g kuuga-cli
 ```
 
 または、プロジェクト内で：
 
 ```bash
-npm install @frourio/kuuga
+npm install kuuga-cli
 ```
 
 ## 使用方法
@@ -90,7 +90,7 @@ kuuga publish
 ## 自動公開とピン留め（GitHub Actions + IPFSノード）
 
 - `main`ブランチにPushすると、GHAが差分を検知して論文ディレクトリを自動生成・コミットします。
-- IPFSノードが起動すると、`node_modules/@frourio/kuuga/dist/publish.sh` スクリプトが以下を実行します：
+- IPFSノードが起動すると、`node_modules/kuuga-cli/dist/publish.sh` スクリプトが以下を実行します：
   - outディレクトリ内のすべての論文ディレクトリをIPFSに再帰的に追加・ピン留め
   - papers配下の各meta.jsonに記載された `references` をもとに引用論文をピン留め
 

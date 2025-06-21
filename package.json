@@ -1,5 +1,5 @@
 {
-  "name": "@frourio/kuuga",
+  "name": "kuuga-cli",
   "version": "0.0.0",
   "description": "Knowledge structure protocol CLI for KUUGA",
   "bin": {
@@ -13,10 +13,10 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
-  "homepage": "https://github.com/frouriojs/kuuga#readme",
+  "homepage": "https://github.com/frouriojs/kuuga-cli#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frouriojs/kuuga.git"
+    "url": "git+https://github.com/frouriojs/kuuga-cli.git"
   },
   "files": [
     "dist",
