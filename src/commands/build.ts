@@ -35,10 +35,22 @@ async function calculateDirectoryCID(dirPath: string): Promise<CID> {
         
         // ルートディレクトリのCIDを返す
         let rootCid: CID | undefined;
+        const allEntries: Array<{ path: string; cid: CID }> = [];
+        
         for await (const entry of dirCid) {
-            if (entry.path === '') {
+            allEntries.push({ path: entry.path || '', cid: entry.cid });
+            // ルートディレクトリを検索（空文字、ドット、またはディレクトリ名）
+            if (entry.path === '' || entry.path === '.' || entry.path === path.basename(dirPath)) {
                 rootCid = entry.cid;
-                break;
+            }
+        }
+        
+        // デバッグ用：すべてのエントリを確認
+        if (!rootCid) {
+            console.log('Available entries:', allEntries.map(e => ({ path: e.path, cid: e.cid.toString() })));
+            // 最後のエントリ（通常はルートディレクトリ）を使用
+            if (allEntries.length > 0) {
+                rootCid = allEntries[allEntries.length - 1].cid;
             }
         }
         
@@ -51,6 +63,8 @@ async function calculateDirectoryCID(dirPath: string): Promise<CID> {
         await helia.stop();
     }
 }
+
+const ORIGIN_PAPER = "ipfs://bafybeie37nnusfxejtmkfi2l2xb6c7qqn74ihgcbqxzvvbytnjstgnznkq";
 
 export async function build() {
     const papersDir = path.resolve('papers');
@@ -97,7 +111,7 @@ export async function build() {
             previousPaper = undefined;
         } else if (version === 1) {
             // version 1の場合は起源論文のCID
-            previousPaper = "ipfs://bafybeie37nnusfxejtmkfi2l2xb6c7qqn74ihgcbqxzvvbytnjstgnznkq";
+            previousPaper = ORIGIN_PAPER;
         } else {
             // version 2以降は前のバージョンのCIDを探す
             const prevVersion = version - 1;
@@ -122,7 +136,7 @@ export async function build() {
                     continue;
                 }
             } else {
-                previousPaper = "ipfs://bafybeie37nnusfxejtmkfi2l2xb6c7qqn74ihgcbqxzvvbytnjstgnznkq";
+                previousPaper = ORIGIN_PAPER;
             }
         }
         
