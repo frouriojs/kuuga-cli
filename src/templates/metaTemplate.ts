@@ -3,7 +3,7 @@ export const metaTemplate = `{
   "language": "earth:ja",
   "version": 1,
   "description": "",
-  "authors": [],
+  "authors": ["My Name"],
   "references": [],
   "license": "CC0-1.0"
 }`;
