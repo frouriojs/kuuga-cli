@@ -1,8 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { CID } from "multiformats/cid";
-import { sha256 } from "multiformats/hashes/sha2";
-import * as raw from "multiformats/codecs/raw";
 
 export async function publish() {
     const outDir = path.resolve('out');
@@ -23,23 +20,31 @@ export async function publish() {
 
     for (const paperDir of paperDirs) {
         const paperPath = path.join(outDir, paperDir);
-        const versions = fs.readdirSync(paperPath, { withFileTypes: true })
+        const cidDirs = fs.readdirSync(paperPath, { withFileTypes: true })
             .filter(dirent => dirent.isDirectory())
+            .filter(dirent => /^\d{3}_/.test(dirent.name))
             .map(dirent => dirent.name);
 
-        for (const version of versions) {
-            const versionPath = path.join(paperPath, version);
-            console.log(`🔍 CID計算中: ${paperDir}/${version}`);
+        for (const cidDir of cidDirs) {
+            const cidDirPath = path.join(paperPath, cidDir);
+            console.log(`📋 論文情報: ${paperDir}/${cidDir}`);
             
-            // ディレクトリ全体のCIDを計算するため、メタファイルを作成
-            const metaPath = path.join(versionPath, "meta.json");
+            // CIDディレクトリ名からversionとCIDを抽出
+            const [versionStr, ...cidParts] = cidDir.split('_');
+            const version = parseInt(versionStr, 10);
+            const cid = cidParts.join('_');
+            
+            // メタファイルの存在確認
+            const metaPath = path.join(cidDirPath, "meta.json");
             if (fs.existsSync(metaPath)) {
                 const metaContent = fs.readFileSync(metaPath, "utf-8");
-                const metaBuffer = Buffer.from(metaContent, 'utf-8');
-                const hash = await sha256.digest(metaBuffer);
-                const cid = CID.create(1, raw.code, hash);
+                const meta = JSON.parse(metaContent);
                 
-                console.log(`✅ ${paperDir}/${version} - Meta CID (v1): ${cid.toString()}`);
+                console.log(`✅ ${paperDir} - CID: ${cid}`);
+                console.log(`   Version: ${version}`);
+                console.log(`   Title: ${meta.title || 'Unknown'}`);
+            } else {
+                console.log(`⚠️  ${paperDir}/${cidDir} - meta.json が見つかりません`);
             }
         }
     }
