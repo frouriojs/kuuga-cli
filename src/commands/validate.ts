@@ -1,5 +1,26 @@
 import fs from "fs";
 import path from "path";
+import { z } from "zod";
+
+const OriginMetaSchema = z.object({
+  "title": z.string(),
+  "language": z.string(),
+  "version":  z.literal(0),
+  "authors": z.array(z.never()),
+  "license": z.string()
+})
+
+const StandardMetaSchema = z.object({
+  "title": z.string(),
+  "language": z.string(),
+  version: z.number().int().positive(),
+  description: z.string().optional(),
+  "authors": z.tuple([z.string()]).rest(z.string()),
+  "references": z.array(z.string().startsWith('ipfs://').or(z.string().url())).optional(),
+  "license": z.string()
+})
+
+const MetaSchema = OriginMetaSchema.or(StandardMetaSchema)
 
 export function validate() {
     const papersDir = path.resolve('papers');
@@ -44,18 +65,13 @@ export function validate() {
                 continue;
             }
             
-            if (meta.version === undefined) {
-                console.error(`❌ ${paperDir}/meta.json に version がありません`);
-                hasError = true;
-            }
-
-            if (!meta.title || typeof meta.title !== "string") {
-                console.error(`❌ ${paperDir}/meta.json に有効な title がありません`);
-                hasError = true;
-            }
-
-            if (!Array.isArray(meta.authors) || meta.authors.length === 0) {
-                console.error(`❌ ${paperDir}/meta.json に authors が定義されていません`);
+            // MetaSchemaで検証
+            const validationResult = MetaSchema.safeParse(meta);
+            if (!validationResult.success) {
+                console.error(`❌ ${paperDir}/meta.json のスキーマ検証に失敗:`);
+                for (const issue of validationResult.error.issues) {
+                    console.error(`  - ${issue.path.join('.')}: ${issue.message}`);
+                }
                 hasError = true;
             }
         }

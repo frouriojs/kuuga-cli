@@ -3,6 +3,7 @@ import path from "path";
 import { createHelia } from "helia";
 import { unixfs } from "@helia/unixfs";
 import { CID } from "multiformats/cid";
+import { validate } from "./validate.js";
 
 
 // HeliaとUnixFSを使ってディレクトリのCIDを計算
@@ -53,18 +54,11 @@ async function calculateDirectoryCID(dirPath: string): Promise<CID> {
                 directoryCid = result.cid;
             }
         }
-        
-        console.log('🔍 CID計算結果:', allEntries.map(e => ({ 
-            path: e.path || 'ROOT', 
-            cid: e.cid.toString() 
-        })));
-        
+                
         if (!directoryCid) {
             throw new Error('Failed to get directory CID');
         }
-        
-        console.log('🔍 ディレクトリCID:', directoryCid.toString());
-        
+                
         return directoryCid;
     } finally {
         await helia.stop();
@@ -74,6 +68,16 @@ async function calculateDirectoryCID(dirPath: string): Promise<CID> {
 const ORIGIN_PAPER = "ipfs://bafybeie37nnusfxejtmkfi2l2xb6c7qqn74ihgcbqxzvvbytnjstgnznkq";
 
 export async function build() {
+    // まず検証を実行
+    console.log("🔍 論文の検証を開始...");
+    try {
+        validate();
+    } catch (error) {
+        console.error("❌ 検証に失敗しました");
+        process.exit(1);
+    }
+    console.log("✅ 検証完了、ビルドを開始します\n");
+
     const papersDir = path.resolve('papers');
     
     if (!fs.existsSync(papersDir)) {
@@ -104,12 +108,7 @@ export async function build() {
         
         const metaContent = fs.readFileSync(metaPath, "utf-8");
         const meta = JSON.parse(metaContent);
-        const version: number | undefined = meta.version;
-        
-        if (version === undefined) {
-            console.error(`❌ ${paperDir}/meta.json に version がありません`);
-            continue;
-        }
+        const version: number = meta.version;
         
         // previousPaperの設定
         let previousPaper: string | undefined;
