@@ -4,61 +4,68 @@ import { createHelia } from "helia";
 import { unixfs } from "@helia/unixfs";
 import { CID } from "multiformats/cid";
 
+
 // HeliaとUnixFSを使ってディレクトリのCIDを計算
 async function calculateDirectoryCID(dirPath: string): Promise<CID> {
     const helia = await createHelia();
     const heliaFs = unixfs(helia);
     
     try {
-        // ディレクトリを再帰的にHeliaに追加
-        async function* addDirectoryEntries(currentPath: string): AsyncGenerator<{ path: string; content: AsyncIterable<Uint8Array> | Uint8Array }> {
-            const entries = fs.readdirSync(currentPath, { withFileTypes: true });
-            
-            for (const entry of entries) {
-                const fullPath = path.join(currentPath, entry.name);
-                const relativePath = path.relative(dirPath, fullPath);
+        // ディレクトリ全体を追加してCIDを取得（wrapWithDirectoryを使用）
+        async function* addDirectoryEntries(): AsyncGenerator<{ path: string; content: AsyncIterable<Uint8Array> | Uint8Array }> {
+            async function* walkDirectory(currentPath: string, basePath: string = ''): AsyncGenerator<{ path: string; content: AsyncIterable<Uint8Array> | Uint8Array }> {
+                const entries = fs.readdirSync(currentPath, { withFileTypes: true });
                 
-                if (entry.isDirectory()) {
-                    // サブディレクトリを再帰的に処理
-                    yield* addDirectoryEntries(fullPath);
-                } else {
-                    // ファイルを追加
-                    const content = fs.readFileSync(fullPath);
-                    yield { path: relativePath, content };
+                // ファイル名でソート（IPFSの順序と一致させるため）
+                entries.sort((a, b) => a.name.localeCompare(b.name));
+                
+                for (const entry of entries) {
+                    const fullPath = path.join(currentPath, entry.name);
+                    const relativePath = basePath ? path.join(basePath, entry.name) : entry.name;
+                    
+                    if (entry.isDirectory()) {
+                        // サブディレクトリを再帰的に処理
+                        yield* walkDirectory(fullPath, relativePath);
+                    } else {
+                        // ファイルを追加
+                        const content = fs.readFileSync(fullPath);
+                        yield { path: relativePath, content };
+                    }
                 }
             }
+            
+            yield* walkDirectory(dirPath);
         }
         
-        // ディレクトリ全体を追加してCIDを取得
-        const entries = addDirectoryEntries(dirPath);
-        const dirCid = heliaFs.addAll(entries);
+        // addAllでディレクトリ全体を追加（wrapWithDirectoryオプション使用）
+        const entries = addDirectoryEntries();
+        const addResults = heliaFs.addAll(entries, { wrapWithDirectory: true });
         
-        // ルートディレクトリのCIDを返す
-        let rootCid: CID | undefined;
+        // 結果を収集
         const allEntries: Array<{ path: string; cid: CID }> = [];
+        let directoryCid: CID | undefined;
         
-        for await (const entry of dirCid) {
-            allEntries.push({ path: entry.path || '', cid: entry.cid });
-            // ルートディレクトリを検索（空文字、ドット、またはディレクトリ名）
-            if (entry.path === '' || entry.path === '.' || entry.path === path.basename(dirPath)) {
-                rootCid = entry.cid;
+        for await (const result of addResults) {
+            allEntries.push({ path: result.path || '', cid: result.cid });
+            
+            // 空のパスがディレクトリのCID
+            if (!result.path || result.path === '') {
+                directoryCid = result.cid;
             }
         }
         
-        // デバッグ用：すべてのエントリを確認
-        if (!rootCid) {
-            console.log('Available entries:', allEntries.map(e => ({ path: e.path, cid: e.cid.toString() })));
-            // 最後のエントリ（通常はルートディレクトリ）を使用
-            if (allEntries.length > 0) {
-                rootCid = allEntries[allEntries.length - 1].cid;
-            }
+        console.log('🔍 CID計算結果:', allEntries.map(e => ({ 
+            path: e.path || 'ROOT', 
+            cid: e.cid.toString() 
+        })));
+        
+        if (!directoryCid) {
+            throw new Error('Failed to get directory CID');
         }
         
-        if (!rootCid) {
-            throw new Error('Failed to get root directory CID');
-        }
+        console.log('🔍 ディレクトリCID:', directoryCid.toString());
         
-        return rootCid;
+        return directoryCid;
     } finally {
         await helia.stop();
     }
