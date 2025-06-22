@@ -78,31 +78,31 @@ export async function build() {
     }
     console.log("✅ 検証完了、ビルドを開始します\n");
 
-    const papersDir = path.resolve('papers');
+    const draftsDir = path.resolve('drafts');
     
-    if (!fs.existsSync(papersDir)) {
-        throw new Error("papers ディレクトリが見つかりません");
+    if (!fs.existsSync(draftsDir)) {
+        throw new Error("drafts ディレクトリが見つかりません");
     }
 
-    const paperDirs = fs.readdirSync(papersDir, { withFileTypes: true })
+    const draftDirs = fs.readdirSync(draftsDir, { withFileTypes: true })
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name);
 
-    if (paperDirs.length === 0) {
-        console.log("📝 papers ディレクトリに論文がありません");
+    if (draftDirs.length === 0) {
+        console.log("📝 drafts ディレクトリに原稿がありません");
         return;
     }
 
-    const outDir = path.resolve('out');
-    await fs.ensureDir(outDir);
+    const papersDir = path.resolve('papers');
+    await fs.ensureDir(papersDir);
 
-    for (const paperDir of paperDirs) {
-        console.log(`🔨 ビルド中: ${paperDir}`);
-        const sourcePath = path.join(papersDir, paperDir);
+    for (const draftDir of draftDirs) {
+        console.log(`🔨 ビルド中: ${draftDir}`);
+        const sourcePath = path.join(draftsDir, draftDir);
         
         const metaPath = path.join(sourcePath, "meta.json");
         if (!fs.existsSync(metaPath)) {
-            console.error(`❌ ${paperDir}/meta.json が見つかりません`);
+            console.error(`❌ ${draftDir}/meta.json が見つかりません`);
             continue;
         }
         
@@ -124,9 +124,9 @@ export async function build() {
             const prevVersionFormatted = prevVersion.toString().padStart(3, '0');
             
             // 前のバージョンのディレクトリを検索
-            const paperOutPath = path.join(outDir, paperDir);
-            if (fs.existsSync(paperOutPath)) {
-                const existingDirs = fs.readdirSync(paperOutPath, { withFileTypes: true })
+            const paperPath = path.join(papersDir, draftDir);
+            if (fs.existsSync(paperPath)) {
+                const existingDirs = fs.readdirSync(paperPath, { withFileTypes: true })
                     .filter(dirent => dirent.isDirectory())
                     .filter(dirent => dirent.name.startsWith(`${prevVersionFormatted}_`))
                     .map(dirent => dirent.name);
@@ -138,7 +138,7 @@ export async function build() {
                     const prevCid = cidParts.join('_');
                     previousPaper = `ipfs://${prevCid}`;
                 } else {
-                    console.error(`❌ ${paperDir} の前のバージョン ${prevVersion} が見つかりません`);
+                    console.error(`❌ ${draftDir} の前のバージョン ${prevVersion} が見つかりません`);
                     continue;
                 }
             } else {
@@ -147,7 +147,7 @@ export async function build() {
         }
         
         // ディレクトリ全体のCIDを計算するため、まず一時的にコピー
-        const tempOutputPath = path.join(outDir, paperDir, "temp");
+        const tempOutputPath = path.join(papersDir, draftDir, "temp");
         
         // 既存のtempディレクトリがあれば削除
         if (fs.existsSync(tempOutputPath)) {
@@ -173,7 +173,7 @@ export async function build() {
         // versionを3桁でフォーマットしてディレクトリ名を作成
         const versionFormatted = version.toString().padStart(3, '0');
         const cidString = cid.toString();
-        const finalOutputPath = path.join(outDir, paperDir, `${versionFormatted}_${cidString}`);
+        const finalOutputPath = path.join(papersDir, draftDir, `${versionFormatted}_${cidString}`);
         
         // 既存ディレクトリがある場合はスキップ、ない場合のみ作成
         if (fs.existsSync(finalOutputPath)) {

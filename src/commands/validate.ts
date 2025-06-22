@@ -23,33 +23,33 @@ const StandardMetaSchema = z.object({
 const MetaSchema = OriginMetaSchema.or(StandardMetaSchema)
 
 export function validate() {
-    const papersDir = path.resolve('papers');
+    const draftsDir = path.resolve('drafts');
     
-    if (!fs.existsSync(papersDir)) {
-        console.error("❌ papers ディレクトリが見つかりません");
+    if (!fs.existsSync(draftsDir)) {
+        console.error("❌ drafts ディレクトリが見つかりません");
         process.exit(1);
     }
 
-    const paperDirs = fs.readdirSync(papersDir, { withFileTypes: true })
+    const draftDirs = fs.readdirSync(draftsDir, { withFileTypes: true })
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name);
 
-    if (paperDirs.length === 0) {
-        console.log("📝 papers ディレクトリに論文がありません");
+    if (draftDirs.length === 0) {
+        console.log("📝 drafts ディレクトリに論文がありません");
         return;
     }
 
     let hasError = false;
     const requiredFiles = ["main.md", "meta.json"];
 
-    for (const paperDir of paperDirs) {
-        console.log(`🔍 検証中: ${paperDir}`);
-        const fullPath = path.join(papersDir, paperDir);
+    for (const draftDir of draftDirs) {
+        console.log(`🔍 検証中: ${draftDir}`);
+        const fullPath = path.join(draftsDir, draftDir);
 
         for (const file of requiredFiles) {
             const filePath = path.join(fullPath, file);
             if (!fs.existsSync(filePath)) {
-                console.error(`❌ ${paperDir}/${file} が見つかりません`);
+                console.error(`❌ ${draftDir}/${file} が見つかりません`);
                 hasError = true;
             }
         }
@@ -60,7 +60,7 @@ export function validate() {
             try {
                 meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
             } catch (err) {
-                console.error(`❌ ${paperDir}/meta.json のパースに失敗:`, err);
+                console.error(`❌ ${draftDir}/meta.json のパースに失敗:`, err);
                 hasError = true;
                 continue;
             }
@@ -68,7 +68,7 @@ export function validate() {
             // MetaSchemaで検証
             const validationResult = MetaSchema.safeParse(meta);
             if (!validationResult.success) {
-                console.error(`❌ ${paperDir}/meta.json のスキーマ検証に失敗:`);
+                console.error(`❌ ${draftDir}/meta.json のスキーマ検証に失敗:`);
                 for (const issue of validationResult.error.issues) {
                     console.error(`  - ${issue.path.join('.')}: ${issue.message}`);
                 }
@@ -80,6 +80,6 @@ export function validate() {
     if (hasError) {
         process.exit(1);
     } else {
-        console.log("✅ すべての論文の検証が完了しました");
+        console.log("✅ すべての原稿の検証が完了しました");
     }
 }

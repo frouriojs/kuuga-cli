@@ -5,8 +5,8 @@ import { metaTemplate } from '../templates/metaTemplate.js';
 import { readmeTemplate } from '../templates/readmeTemplate.js';
 
 export async function add(paperName: string) {
-  const papersDir = path.resolve('papers');
-  const fullPath = path.join(papersDir, paperName);
+  const draftsDir = path.resolve('drafts');
+  const fullPath = path.join(draftsDir, paperName);
   
   await fs.ensureDir(fullPath);
 
@@ -14,5 +14,5 @@ export async function add(paperName: string) {
   await fs.writeFile(path.join(fullPath, 'meta.json'), metaTemplate);
   await fs.writeFile(path.join(fullPath, 'README.md'), readmeTemplate);
 
-  console.log(`✅ Created paper template at ${fullPath}`);
+  console.log(`✅ Created draft template at ${fullPath}`);
 }

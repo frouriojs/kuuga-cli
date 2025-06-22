@@ -21,11 +21,8 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Build CLI
-        run: npm run build
-
       - name: Build Papers
-        run: npx kuuga build
+        run: npm run build
 
       - name: Commit Built Papers
         run: |
@@ -34,8 +31,8 @@ jobs:
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes to commit"
           else
-            git add out/
-            git commit -m "chore: build papers to out directory"
+            git add papers/
+            git commit -m "chore: build papers"
             git push
           fi
 `;

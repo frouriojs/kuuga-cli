@@ -4,9 +4,8 @@
 
 ## 特徴
 - MarkdownとJSONによるシンプルな論文管理
-- Gitモノレポと連携したバージョン管理
-- IPFSネットワークへの自動公開
-- 引用関係をもとにしたピン留めルールの推奨
+- Gitでのバージョン管理を前提
+- IPFSネットワークに論文と引用先の自動ピン留め
 
 ## インストール
 
@@ -26,19 +25,19 @@ npm install kuuga-cli
 新しいKUUGAプロジェクトを初期化します：
 
 ```bash
-kuuga init my-kuuga-project
+kuuga init
 ```
 
 生成されるファイル：
 
 ```
-my-kuuga-project/
+/
 ├── Dockerfile      # IPFSノード用
 └── .github/workflows/build-papers.yml
 ```
 
-### 論文の追加
-papers配下に新しい論文ディレクトリを作成します：
+### 原稿の追加
+drafts配下に新しい原稿ディレクトリを作成します：
 
 ```bash
 kuuga add my-paper
@@ -47,7 +46,7 @@ kuuga add my-paper
 生成されるファイル：
 
 ```
-papers/my-paper/
+drafts/my-paper/
 ├── main.md         # 本文（Markdown）
 ├── meta.json       # 論文のメタ情報
 └── README.md       # 論文用Readme
@@ -55,7 +54,7 @@ papers/my-paper/
 
 ### 検証
 
-papers配下のすべての論文の構成ファイルを一括検証します：
+drafts配下のすべての論文の構成ファイルを一括検証します：
 
 ```bash
 kuuga validate
@@ -63,35 +62,25 @@ kuuga validate
 
 ### ビルド
 
-papers配下のすべての論文を`out/`ディレクトリに一括コピーします：
+drafts配下のすべての原稿からpapersディレクトリに論文を生成します：
 
 ```bash
 kuuga build
 ```
 
-論文は`out/{論文名}/{バージョン}/`の形式でディレクトリ構造が作成されます。
+論文は`papers/{論文名}/{3ケタパディング付きバージョン}_{IPFSのCID}/`の形式でディレクトリ構造が作成されます。
 
 ### ピン留め
 
-outディレクトリの論文ディレクトリをIPFSにピン留めし、引用先もピン留めします：
+papersディレクトリの論文と引用先をIPFSにピン留めします：
 
 ```bash
 kuuga pin
 ```
 
-### CID計算
-
-outディレクトリの論文ディレクトリのIPFS CIDを計算します：
-
-```bash
-kuuga publish
-```
-
-## 自動公開とピン留め（GitHub Actions + IPFSノード）
+## 自動公開とピン留め（GitHub Actions + Dockerコンテナ）
 
 - `main`ブランチにPushすると、GHAが差分を検知して論文ディレクトリを自動生成・コミットします。
-- IPFSノードが起動すると、`node_modules/kuuga-cli/dist/publish.sh` スクリプトが以下を実行します：
-  - outディレクトリ内のすべての論文ディレクトリをIPFSに再帰的に追加・ピン留め
-  - papers配下の各meta.jsonに記載された `references` をもとに引用論文をピン留め
+- 任意のサーバーで4001番ポートを開放し、Dockerfileでコンテナを起動するとIPFSへのピン留めが実行されます。
 
 この仕組みにより、引用関係が壊れないようネットワーク全体での保存努力が促進されます。

@@ -6,7 +6,6 @@ import { add } from "./commands/add.js";
 import { validate } from "./commands/validate.js";
 import { build } from "./commands/build.js";
 import { pin } from "./commands/pin.js";
-import { publish } from "./commands/publish.js";
 
 const program = new Command();
 
@@ -23,27 +22,22 @@ program
 program
   .command("add")
   .argument("<name>", "論文名を指定")
-  .description("papers配下に新しい論文ディレクトリを作成する")
+  .description("drafts配下に新しい原稿ディレクトリを作成する")
   .action(add);
 
 program
   .command("validate")
-  .description("papers配下のすべての論文を検証する")
+  .description("drafts配下のすべての原稿を検証する")
   .action(validate);
 
 program
   .command("build")
-  .description("papers配下のすべての論文をZIPにパッケージする")
+  .description("drafts配下のすべての原稿からpapersに論文を生成する")
   .action(build);
 
 program
   .command("pin")
-  .description("outディレクトリのZIPファイルをIPFSにピン留めする")
+  .description("papersディレクトリのすべての論文と引用先をIPFSにピン留めする")
   .action(pin);
-
-program
-  .command("publish")
-  .description("outディレクトリのZIPファイルのIPFS CIDを計算する")
-  .action(publish);
 
 program.parse();
