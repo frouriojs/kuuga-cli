@@ -54,7 +54,7 @@ drafts/my-paper/
 
 ### 検証
 
-drafts配下のすべての論文の構成ファイルを一括検証します：
+drafts配下のすべての原稿の構成ファイルを一括検証します：
 
 ```bash
 kuuga validate
