@@ -148,6 +148,13 @@ export async function build() {
         
         // ディレクトリ全体のCIDを計算するため、まず一時的にコピー
         const tempOutputPath = path.join(outDir, paperDir, "temp");
+        
+        // 既存のtempディレクトリがあれば削除
+        if (fs.existsSync(tempOutputPath)) {
+            console.log(`🧹 既存のtempディレクトリを削除: ${tempOutputPath}`);
+            await fs.remove(tempOutputPath);
+        }
+        
         await fs.ensureDir(tempOutputPath);
         await fs.copy(sourcePath, tempOutputPath);
         
@@ -168,10 +175,16 @@ export async function build() {
         const cidString = cid.toString();
         const finalOutputPath = path.join(outDir, paperDir, `${versionFormatted}_${cidString}`);
         
-        // 一時ディレクトリを最終的な名前にリネーム
-        await fs.move(tempOutputPath, finalOutputPath);
-        
-        console.log(`✅ ディレクトリを作成: ${finalOutputPath}`);
+        // 既存ディレクトリがある場合はスキップ、ない場合のみ作成
+        if (fs.existsSync(finalOutputPath)) {
+            console.log(`⏭️  既存のディレクトリをスキップ: ${finalOutputPath}`);
+            // 一時ディレクトリを削除
+            await fs.remove(tempOutputPath);
+        } else {
+            // 一時ディレクトリを最終的な名前にリネーム
+            await fs.move(tempOutputPath, finalOutputPath);
+            console.log(`✅ ディレクトリを作成: ${finalOutputPath}`);
+        }
     }
     
     console.log("✅ すべての論文のビルドが完了しました");
