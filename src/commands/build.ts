@@ -1,8 +1,56 @@
 import fs from "fs-extra";
 import path from "path";
+import { createHelia } from "helia";
+import { unixfs } from "@helia/unixfs";
 import { CID } from "multiformats/cid";
-import { sha256 } from "multiformats/hashes/sha2";
-import * as raw from "multiformats/codecs/raw";
+
+// HeliaとUnixFSを使ってディレクトリのCIDを計算
+async function calculateDirectoryCID(dirPath: string): Promise<CID> {
+    const helia = await createHelia();
+    const heliaFs = unixfs(helia);
+    
+    try {
+        // ディレクトリを再帰的にHeliaに追加
+        async function* addDirectoryEntries(currentPath: string): AsyncGenerator<{ path: string; content: AsyncIterable<Uint8Array> | Uint8Array }> {
+            const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+            
+            for (const entry of entries) {
+                const fullPath = path.join(currentPath, entry.name);
+                const relativePath = path.relative(dirPath, fullPath);
+                
+                if (entry.isDirectory()) {
+                    // サブディレクトリを再帰的に処理
+                    yield* addDirectoryEntries(fullPath);
+                } else {
+                    // ファイルを追加
+                    const content = fs.readFileSync(fullPath);
+                    yield { path: relativePath, content };
+                }
+            }
+        }
+        
+        // ディレクトリ全体を追加してCIDを取得
+        const entries = addDirectoryEntries(dirPath);
+        const dirCid = heliaFs.addAll(entries);
+        
+        // ルートディレクトリのCIDを返す
+        let rootCid: CID | undefined;
+        for await (const entry of dirCid) {
+            if (entry.path === '') {
+                rootCid = entry.cid;
+                break;
+            }
+        }
+        
+        if (!rootCid) {
+            throw new Error('Failed to get root directory CID');
+        }
+        
+        return rootCid;
+    } finally {
+        await helia.stop();
+    }
+}
 
 export async function build() {
     const papersDir = path.resolve('papers');
@@ -43,8 +91,11 @@ export async function build() {
         }
         
         // previousPaperの設定
-        let previousPaper: string;
-        if (version === 1) {
+        let previousPaper: string | undefined;
+        if (version === 0) {
+            // version 0の場合はpreviousPaperを設定しない
+            previousPaper = undefined;
+        } else if (version === 1) {
             // version 1の場合は起源論文のCID
             previousPaper = "ipfs://bafybeie37nnusfxejtmkfi2l2xb6c7qqn74ihgcbqxzvvbytnjstgnznkq";
         } else {
@@ -80,17 +131,17 @@ export async function build() {
         await fs.ensureDir(tempOutputPath);
         await fs.copy(sourcePath, tempOutputPath);
         
-        // コピー先のmeta.jsonにpreviousPaperを追加
+        // コピー先のmeta.jsonにpreviousPaperを追加（version 0以外の場合）
         const tempMetaPath = path.join(tempOutputPath, "meta.json");
         const tempMetaContent = fs.readFileSync(tempMetaPath, "utf-8");
         const tempMeta = JSON.parse(tempMetaContent);
-        tempMeta.previousPaper = previousPaper;
+        if (previousPaper !== undefined) {
+            tempMeta.previousPaper = previousPaper;
+        }
         fs.writeFileSync(tempMetaPath, JSON.stringify(tempMeta, null, 2));
         
-        // メタファイルの内容からCIDを計算
-        const metaBuffer = fs.readFileSync(tempMetaPath);
-        const hash = await sha256.digest(metaBuffer);
-        const cid = CID.create(1, raw.code, hash);
+        // ディレクトリ全体のCIDを計算
+        const cid = await calculateDirectoryCID(tempOutputPath);
         
         // versionを3桁でフォーマットしてディレクトリ名を作成
         const versionFormatted = version.toString().padStart(3, '0');
