@@ -1,15 +1,10 @@
 import type { UnixFS } from '@helia/unixfs';
 import fs from 'fs/promises';
-import type { HeliaLibp2p } from 'helia';
 import type { CID } from 'multiformats/cid';
 import path from 'path';
 
 // HeliaとUnixFSを使ってディレクトリを追加してCIDを取得
-export async function addDirectory(
-  _helia: HeliaLibp2p,
-  heliaFs: UnixFS,
-  dirPath: string,
-): Promise<CID> {
+export async function addDirectory(heliaFs: UnixFS, dirPath: string): Promise<CID> {
   async function* addDirectoryEntries(): AsyncGenerator<{
     path: string;
     content: AsyncIterable<Uint8Array> | Uint8Array;

@@ -1,8 +1,10 @@
 import { unixfs } from '@helia/unixfs';
+import { bootstrap } from '@libp2p/bootstrap';
 import fs from 'fs';
 import { createHelia } from 'helia';
 import { CID } from 'multiformats/cid';
 import path from 'path';
+import { z } from 'zod';
 import { addDirectory } from '../utils/helia-helpers.js';
 
 interface PaperCid {
@@ -20,10 +22,11 @@ export async function pin(): Promise<void> {
     process.exit(1);
   }
 
-  // Heliaインスタンスを作成
-  const helia = await createHelia();
+  const multiaddrs = await fetch('https://kuuga.io/api/multiaddrs').then((res) =>
+    z.array(z.string()).parse(res.json()),
+  );
+  const helia = await createHelia({ libp2p: { peerDiscovery: [bootstrap({ list: multiaddrs })] } });
   const heliaFs = unixfs(helia);
-
   const paperCids: PaperCid[] = [];
 
   try {
@@ -45,7 +48,7 @@ export async function pin(): Promise<void> {
         console.log(`📦 公開: ${paperDir}/${version}`);
 
         try {
-          const cid = await addDirectory(helia, heliaFs, versionPath);
+          const cid = await addDirectory(heliaFs, versionPath);
           const cidString = cid.toString();
           console.log(`✅ CID: ${cidString}`);
           paperCids.push({ paperdir: `${paperDir}/${version}`, cid: cidString });
@@ -159,7 +162,7 @@ export async function pin(): Promise<void> {
           // CIDが取得できない場合は再度追加を試行
           console.log(`🔄 再追加試行: ${paperdir}`);
           try {
-            const newCid = await addDirectory(helia, heliaFs, path.join(papersDir, paperdir));
+            const newCid = await addDirectory(heliaFs, path.join(papersDir, paperdir));
             const newCidString = newCid.toString();
             if (newCidString && newCidString !== cid) {
               console.log(`📡 新CIDで公開通知: ${newCidString}`);
