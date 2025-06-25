@@ -22,9 +22,9 @@ export async function pin(): Promise<void> {
     process.exit(1);
   }
 
-  const multiaddrs = await fetch('https://kuuga.io/api/multiaddrs').then((res) =>
-    z.array(z.string()).parse(res.json()),
-  );
+  const multiaddrs = await fetch('https://kuuga.io/api/multiaddrs')
+    .then((res) => res.json())
+    .then((json) => z.array(z.string()).parse(json));
   const helia = await createHelia({ libp2p: { peerDiscovery: [bootstrap({ list: multiaddrs })] } });
   const heliaFs = unixfs(helia);
   const paperCids: PaperCid[] = [];
