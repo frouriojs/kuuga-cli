@@ -3,14 +3,14 @@
   "version": "0.0.0",
   "description": "Knowledge structure protocol CLI for KUUGA",
   "bin": {
-    "kuuga": "./dist/cli.js"
+    "kuuga": "bin/index.js"
   },
   "type": "module",
   "author": "Solufa",
   "license": "MIT",
   "main": "dist/cli.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "run-p lint:*",
     "lint:js": "eslint .",
     "lint:prettier": "prettier --check \"./**/*.{ts,js}\" --ignore-path .gitignore",

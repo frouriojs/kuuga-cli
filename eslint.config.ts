@@ -8,6 +8,7 @@ export default tseslint.config(
   gitignore(),
   js.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
+  { ignores: ['bin/**'] },
   {
     languageOptions: {
       parserOptions: {
