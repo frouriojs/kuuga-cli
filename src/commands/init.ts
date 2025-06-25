@@ -1,9 +1,9 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { githubWorkflowTemplate } from '../templates/githubWorkflowTemplate.js';
 import { dockerfileTemplate } from '../templates/dockerfileTemplate.js';
+import { githubWorkflowTemplate } from '../templates/githubWorkflowTemplate.js';
 
-export async function init() {
+export async function init(): Promise<void> {
   const fullPath = path.resolve();
   const workflowDir = path.join(fullPath, '.github', 'workflows');
 

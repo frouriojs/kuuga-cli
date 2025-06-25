@@ -1,8 +1,11 @@
 import fs from 'fs-extra';
 import path from 'path';
 
-const packageJsonPath = path.join(path.dirname(new URL(import.meta.url).pathname), '../../package.json');
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+const packageJsonPath = path.join(
+  path.dirname(new URL(import.meta.url).pathname),
+  '../../package.json',
+);
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8')) as Record<string, string>;
 
 export const dockerfileTemplate = `FROM node:22-slim
 

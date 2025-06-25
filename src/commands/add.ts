@@ -4,10 +4,10 @@ import { mainTemplate } from '../templates/mainTemplate.js';
 import { metaTemplate } from '../templates/metaTemplate.js';
 import { readmeTemplate } from '../templates/readmeTemplate.js';
 
-export async function add(paperName: string) {
+export async function add(paperName: string): Promise<void> {
   const draftsDir = path.resolve('drafts');
   const fullPath = path.join(draftsDir, paperName);
-  
+
   await fs.ensureDir(fullPath);
 
   await fs.writeFile(path.join(fullPath, 'main.md'), mainTemplate);
