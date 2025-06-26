@@ -4,7 +4,6 @@ import { keys } from '@libp2p/crypto';
 import { peerIdFromPrivateKey } from '@libp2p/peer-id';
 import fs from 'fs';
 import { createHelia } from 'helia';
-import { bootstrapConfig } from 'helia/src/utils/bootstrappers.js';
 import { CID } from 'multiformats/cid';
 import path from 'path';
 import { z } from 'zod';
@@ -41,7 +40,20 @@ export async function pin(): Promise<void> {
 
   console.log(`✅ PeerID: ${peerId.toString()}`);
   const helia = await createHelia({
-    libp2p: { peerId, peerDiscovery: [bootstrap(bootstrapConfig)] },
+    libp2p: {
+      peerId,
+      peerDiscovery: [
+        bootstrap({
+          list: [
+            '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+            '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+            '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+            '/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8',
+            '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
+          ],
+        }),
+      ],
+    },
   });
   const heliaFs = unixfs(helia);
   const paperCids: PaperCid[] = [];
