@@ -4,6 +4,7 @@ import { keys } from '@libp2p/crypto';
 import { peerIdFromPrivateKey } from '@libp2p/peer-id';
 import fs from 'fs';
 import { createHelia } from 'helia';
+import { bootstrapConfig } from 'helia/src/utils/bootstrappers.js';
 import { CID } from 'multiformats/cid';
 import path from 'path';
 import { z } from 'zod';
@@ -38,8 +39,9 @@ export async function pin(): Promise<void> {
     peerId = peerIdFromPrivateKey(privateKey);
   }
 
+  console.log(`✅ PeerID: ${peerId.toString()}`);
   const helia = await createHelia({
-    libp2p: { peerId, peerDiscovery: [bootstrap({ list: [] })] },
+    libp2p: { peerId, peerDiscovery: [bootstrap(bootstrapConfig)] },
   });
   const heliaFs = unixfs(helia);
   const paperCids: PaperCid[] = [];
