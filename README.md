@@ -3,6 +3,7 @@
 宇宙スケールの知の保存を目的としたプロトコル「KUUGA」のCLIツールです。論文をMarkdownとJSONで管理し、IPFSへの公開と永続化を支援します。
 
 ## 特徴
+
 - MarkdownとJSONによるシンプルな論文管理
 - Gitでのバージョン管理を前提
 - IPFSネットワークに論文と引用先の自動ピン留め
@@ -22,6 +23,7 @@ npm install kuuga-cli
 ## 使用方法
 
 ### プロジェクト初期化
+
 新しいKUUGAプロジェクトを初期化します：
 
 ```bash
@@ -37,6 +39,7 @@ kuuga init
 ```
 
 ### 原稿の追加
+
 drafts配下に新しい原稿ディレクトリを作成します：
 
 ```bash
@@ -70,6 +73,37 @@ kuuga build
 
 論文は`papers/{論文名}/{3ケタパディング付きバージョン}_{IPFSのCID}/`の形式でディレクトリ構造が作成されます。
 
+### Peer ID生成
+
+IPFSネットワークで使用するPeer IDを生成し、JSONファイルに保存します：
+
+```bash
+kuuga gen-key
+```
+
+オプショナルで出力先のパスを指定できます：
+
+```bash
+kuuga gen-key my-peer-id.json
+```
+
+生成されるJSONファイルの形式：
+
+```json
+{
+  "id": "12D3...",
+  "privKey": "CAESQBc...（Base64エンコードされた秘密鍵）",
+  "pubKey": "MCowBQ...（Base64エンコードされた公開鍵）"
+}
+```
+
+生成されたPeer IDを使用するには、JSONファイルの内容を`KUUGA_KEY`環境変数に設定します：
+
+```bash
+export KUUGA_KEY='{"id":"12D3...","privKey":"CAESQ...","pubKey":"MCowB..."}'
+kuuga pin
+```
+
 ### ピン留め
 
 papersディレクトリの論文と引用先をIPFSにピン留めします：
@@ -77,6 +111,8 @@ papersディレクトリの論文と引用先をIPFSにピン留めします：
 ```bash
 kuuga pin
 ```
+
+`KUUGA_KEY`環境変数が設定されている場合、指定されたPeer IDでIPFSネットワークに接続します。設定されていない場合は、実行の度に新しいPeer IDが生成されます。
 
 ## 自動公開とピン留め（GitHub Actions + Dockerコンテナ）
 

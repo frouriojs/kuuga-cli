@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { add } from './commands/add.js';
 import { build } from './commands/build.js';
+import { genKey } from './commands/gen-key.js';
 import { init } from './commands/init.js';
 import { pin } from './commands/pin.js';
 import { validate } from './commands/validate.js';
@@ -33,5 +34,11 @@ program
   .command('pin')
   .description('papersディレクトリのすべての論文と引用先をIPFSにピン留めする')
   .action(pin);
+
+program
+  .command('gen-key')
+  .argument('[outputPath]', 'JSONファイルの出力パス（デフォルト: peer-id.json）')
+  .description('Peer IDを生成してJSONファイルに保存する')
+  .action(genKey);
 
 program.parse();
