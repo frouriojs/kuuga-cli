@@ -39,6 +39,11 @@ export async function pin(): Promise<void> {
   }
 
   console.log(`✅ PeerID: ${peerId.toString()}`);
+
+  const multiaddrs = await fetch('https://kuuga.io/api/multiaddrs')
+    .then((res) => res.json())
+    .then((json) => z.array(z.string()).parse(json));
+
   const helia = await createHelia({
     libp2p: {
       peerId,
@@ -50,6 +55,7 @@ export async function pin(): Promise<void> {
             '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
             '/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8',
             '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
+            ...multiaddrs,
           ],
         }),
       ],
