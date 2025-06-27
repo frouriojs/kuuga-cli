@@ -28,11 +28,16 @@ jobs:
         run: |
           git config user.name "kuuga-bot"
           git config user.email "actions@github.com"
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "No changes to commit"
+          if [ -z "$(git status --porcelain papers/)" ]; then
+            echo "No changes to commit in papers/"
           else
             git add papers/
             git commit -m "chore: build papers"
             git push
           fi
+
+      # - name: Upload Papers to Pinata
+      #   env:
+      #     PINATA_JWT: \${{ secrets.PINATA_JWT }}
+      #   run: npm run pinata
 `;
