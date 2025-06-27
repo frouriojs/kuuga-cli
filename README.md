@@ -114,6 +114,29 @@ kuuga pin
 
 `KUUGA_KEY`環境変数が設定されている場合、指定されたPeer IDでIPFSネットワークに接続します。設定されていない場合は、実行の度に新しいPeer IDが生成されます。
 
+### Pinataへのアップロード
+
+papersディレクトリの論文をPinataサービスにアップロードします：
+
+```bash
+kuuga pinata
+```
+
+このコマンドを使用するには、`PINATA_JWT`環境変数の設定が必要です：
+
+```bash
+export PINATA_JWT='your-pinata-jwt-token'
+kuuga pinata
+```
+
+オプションで`PINATA_GATEWAY`環境変数を設定することもできます：
+
+```bash
+export PINATA_GATEWAY='your-custom-gateway.mypinata.cloud'
+```
+
+アップロードされたファイルは、`{バージョン番号}_{論文名}`の形式で保存されます（例：`001_my-paper`）。
+
 ## 自動公開とピン留め（GitHub Actions + Dockerコンテナ）
 
 - `main`ブランチにPushすると、GHAが差分を検知して論文ディレクトリを自動生成・コミットします。

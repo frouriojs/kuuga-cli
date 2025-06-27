@@ -6,6 +6,7 @@ import { build } from './commands/build.js';
 import { genKey } from './commands/gen-key.js';
 import { init } from './commands/init.js';
 import { pin } from './commands/pin.js';
+import { pinata } from './commands/pinata.js';
 import { validate } from './commands/validate.js';
 
 const program = new Command();
@@ -40,5 +41,7 @@ program
   .argument('[outputPath]', 'JSONファイルの出力パス（デフォルト: peer-id.json）')
   .description('Peer IDを生成してJSONファイルに保存する')
   .action(genKey);
+
+program.command('pinata').description('papers配下の論文をPinataにアップロードする').action(pinata);
 
 program.parse();
