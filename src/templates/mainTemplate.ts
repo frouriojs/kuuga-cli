@@ -1,2 +1,2 @@
-export const mainTemplate = `# Title
+export const mainTemplate = `## Headline
 `;

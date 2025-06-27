@@ -51,8 +51,7 @@ kuuga add my-paper
 ```
 drafts/my-paper/
 ├── main.md         # 本文（Markdown）
-├── meta.json       # 論文のメタ情報
-└── README.md       # 論文用Readme
+└── meta.json       # 論文のメタ情報
 ```
 
 ### 検証
