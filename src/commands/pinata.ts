@@ -16,8 +16,9 @@ async function notifyRegistryForPinata(uploadedPapers: UploadedPaper[]): Promise
   for (const { paperdir, cid } of uploadedPapers) {
     console.log(`📡 公開通知送信中: ${cid} (${paperdir})`);
 
-    // 503の場合は30秒ごとにリトライ
+    // 503の場合は60秒ごとにリトライ
     let retryCount = 0;
+    let isSuccess = false;
     const maxRetries = 10;
 
     while (retryCount < maxRetries) {
@@ -25,10 +26,11 @@ async function notifyRegistryForPinata(uploadedPapers: UploadedPaper[]): Promise
         const response = await fetch(`https://kuuga.io/ipfs/${cid}`, { method: 'HEAD' });
         if (response.status === 200) {
           console.log(`✅ 公開通知成功: ${cid}`);
+          isSuccess = true;
           break;
         } else if (response.status === 503) {
-          console.log(`⏳ サービス一時利用不可、30秒後にリトライ: ${cid}`);
-          await new Promise((resolve) => setTimeout(resolve, 30000));
+          console.log(`⏳ サービス一時利用不可、60秒後にリトライ: ${cid}`);
+          await new Promise((resolve) => setTimeout(resolve, 60000));
           retryCount++;
         } else {
           console.log(`⚠️ 予期しないレスポンス (${response.status}): ${cid}`);
@@ -39,6 +41,8 @@ async function notifyRegistryForPinata(uploadedPapers: UploadedPaper[]): Promise
         break;
       }
     }
+
+    if (!isSuccess) process.exit(1);
   }
 }
 

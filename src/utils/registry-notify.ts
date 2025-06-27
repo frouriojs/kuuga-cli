@@ -40,7 +40,7 @@ export async function notifyRegistry(
       }
 
       if (ipfsAccessible) {
-        // 503の場合は30秒ごとにリトライ
+        // 503の場合は60秒ごとにリトライ
         let retryCount = 0;
         const maxRetries = 10;
 
@@ -51,8 +51,8 @@ export async function notifyRegistry(
               console.log(`✅ 公開通知成功: ${cid}`);
               break;
             } else if (response.status === 503) {
-              console.log(`⏳ サービス一時利用不可、30秒後にリトライ: ${cid}`);
-              await new Promise((resolve) => setTimeout(resolve, 30000));
+              console.log(`⏳ サービス一時利用不可、60秒後にリトライ: ${cid}`);
+              await new Promise((resolve) => setTimeout(resolve, 60000));
               retryCount++;
             } else {
               console.log(`⚠️ 予期しないレスポンス (${response.status}): ${cid}`);
