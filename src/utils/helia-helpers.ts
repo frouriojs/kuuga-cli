@@ -23,6 +23,10 @@ export async function addDirectory(heliaFs: UnixFS, dirPath: string): Promise<CI
         if (entry.isDirectory()) {
           yield* walkDirectory(fullPath, relativePath);
         } else {
+          // Exclude cid.txt and .ots files from IPFS upload
+          if (entry.name === 'cid.txt' || entry.name === 'cid.txt.ots') {
+            continue;
+          }
           const content = await fs.readFile(fullPath);
           yield { path: relativePath, content };
         }

@@ -1,4 +1,5 @@
 import fs from 'fs-extra';
+import * as OpenTimestamps from 'opentimestamps';
 import path from 'path';
 import { calculateDirectoryCID, getPreviousPaper } from './buildUtils.js';
 import { validate } from './validate.js';
@@ -72,6 +73,28 @@ export async function build(): Promise<void> {
     } else {
       await fs.move(tempOutputPath, finalOutputPath);
       console.log(`✅ ディレクトリを作成: ${finalOutputPath}`);
+
+      const cidTxtPath = path.join(finalOutputPath, 'cid.txt');
+      fs.writeFileSync(cidTxtPath, cidString);
+      console.log(`📝 CIDファイルを作成: cid.txt`);
+
+      try {
+        console.log(`⏰ OpenTimestampsプルーフを作成中...`);
+        const fileData = Buffer.from(cidString, 'utf8');
+        const detached = OpenTimestamps.DetachedTimestampFile.fromBytes(
+          new OpenTimestamps.Ops.OpSHA256(),
+          fileData,
+        );
+        await OpenTimestamps.stamp(detached);
+
+        const otsPath = `${cidTxtPath}.ots`;
+        fs.writeFileSync(otsPath, Buffer.from(detached.serializeToBytes()));
+        console.log('✅ OpenTimestampsプルーフを作成しました');
+      } catch (error) {
+        console.warn(
+          `⚠️  OpenTimestampsプルーフの作成に失敗: ${error instanceof Error ? error.message : 'unknown error'}`,
+        );
+      }
     }
   }
 

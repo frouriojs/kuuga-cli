@@ -107,6 +107,10 @@ export async function pinata(): Promise<void> {
             if (entry.isDirectory()) {
               walkDir(fullPath, relPath);
             } else if (entry.isFile()) {
+              // Exclude cid.txt and .ots files from upload
+              if (entry.name === 'cid.txt' || entry.name === 'cid.txt.ots') {
+                continue;
+              }
               const fileContent = fs.readFileSync(fullPath);
               // Create a File with only the relative path within the version directory
               const blob = new Blob([fileContent], { type: 'application/octet-stream' });

@@ -41,6 +41,7 @@
     "fs-extra": "^11.3.0",
     "helia": "^5.4.2",
     "multiformats": "^13.3.7",
+    "opentimestamps": "^0.4.9",
     "pinata": "^2.4.8",
     "zod": "^3.25.67"
   },
