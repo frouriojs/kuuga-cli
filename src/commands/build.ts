@@ -1,5 +1,5 @@
 import fs from 'fs-extra';
-import * as OpenTimestamps from 'opentimestamps';
+import OpenTimestamps from 'opentimestamps';
 import path from 'path';
 import { calculateDirectoryCID, getPreviousPaper } from './buildUtils.js';
 import { validate } from './validate.js';
