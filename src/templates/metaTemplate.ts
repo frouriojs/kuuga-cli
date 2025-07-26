@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { type MetaSchema } from 'src/commands/validate';
 import { z } from 'zod';
+import type { MetaSchema } from '../commands/validate';
 
 export const ConfigSchema = z.object({
   author: z.object({ name: z.string(), pubKey: z.string().startsWith('sha256:') }),

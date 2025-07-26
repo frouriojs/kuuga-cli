@@ -1,10 +1,10 @@
 import { createHash, generateKeyPairSync } from 'crypto';
 import fs from 'fs-extra';
 import path from 'path';
-import { ConfigSchema } from 'src/templates/metaTemplate.js';
 import type { z } from 'zod';
 import { dockerfileTemplate } from '../templates/dockerfileTemplate.js';
 import { githubWorkflowTemplate } from '../templates/githubWorkflowTemplate.js';
+import { ConfigSchema } from '../templates/metaTemplate.js';
 
 export async function init(): Promise<void> {
   const fullPath = path.resolve();
