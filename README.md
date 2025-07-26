@@ -35,7 +35,11 @@ kuuga init
 ```
 /
 ├── Dockerfile      # IPFSノード用
-└── .github/workflows/build-papers.yml
+├── .gitignore
+├── .github/workflows/build-papers.yml
+├── .kuuga/config.json          # 論文のメタ情報初期値
+├── .kuuga/private_key.pem      # 所有権証明用
+└── .kuuga/public_key.pem       # 所有権証明用
 ```
 
 ### 原稿の追加

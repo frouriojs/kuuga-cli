@@ -9,6 +9,7 @@ import path from 'path';
 import { z } from 'zod';
 import { addDirectory } from '../utils/helia-helpers.js';
 import { notifyRegistry } from '../utils/registry-notify.js';
+import { MetaSchema } from './validate.js';
 
 interface PaperCid {
   paperdir: string;
@@ -100,10 +101,9 @@ export async function pin(): Promise<void> {
         console.log(`📋 メタファイル処理: ${paperDir}/meta.json`);
 
         try {
-          const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8')) as {
-            references?: string[];
-            previousPaper?: string;
-          };
+          const meta = MetaSchema.and(
+            z.object({ previousPaper: z.string().startsWith('ipfs://').optional() }),
+          ).parse(JSON.parse(fs.readFileSync(metaPath, 'utf-8')));
 
           // 引用先をピン留め
           if (meta.references && Array.isArray(meta.references)) {
@@ -124,7 +124,7 @@ export async function pin(): Promise<void> {
           }
 
           // previousPaperをピン留め
-          if (meta.previousPaper && meta.previousPaper !== 'null') {
+          if (meta.previousPaper) {
             // ipfs://プレフィックスを削除
             const cleanPrev = meta.previousPaper.replace(/^ipfs:\/\//, '');
             console.log(`📌 過去論文をピン留め: ${cleanPrev}`);

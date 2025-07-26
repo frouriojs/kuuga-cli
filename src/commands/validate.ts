@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import fs from 'fs';
 import fs_extra from 'fs-extra';
 import path from 'path';
@@ -8,21 +9,40 @@ const OriginMetaSchema = z.object({
   title: z.string(),
   language: z.string(),
   version: z.literal(0),
+  description: z.undefined(),
   authors: z.array(z.never()),
-  license: z.string(),
+  references: z.undefined(),
+  license: z.literal('CC0-1.0'),
+});
+
+const ReferencesSchema = z.array(z.string().startsWith('ipfs://').or(z.string().url())).optional();
+
+const OldMetaSchema = z.object({
+  title: z.string(),
+  language: z.string(),
+  version: z.number().int().positive(),
+  description: z.string().optional(),
+  authors: z.tuple([z.string()]).rest(z.string()),
+  references: ReferencesSchema,
+  license: z.literal('CC0-1.0'),
+});
+
+export const AuthorSchema = z.object({
+  name: z.string(),
+  pubKey: z.string().startsWith('sha256:').optional(),
 });
 
 const StandardMetaSchema = z.object({
   title: z.string(),
   language: z.string(),
   version: z.number().int().positive(),
-  description: z.string().optional(),
-  authors: z.tuple([z.string()]).rest(z.string()),
-  references: z.array(z.string().startsWith('ipfs://').or(z.string().url())).optional(),
-  license: z.string(),
+  description: z.undefined(),
+  authors: z.tuple([AuthorSchema]).rest(AuthorSchema),
+  references: ReferencesSchema,
+  license: z.literal('CC0-1.0'),
 });
 
-const MetaSchema = OriginMetaSchema.or(StandardMetaSchema);
+export const MetaSchema = OriginMetaSchema.or(OldMetaSchema).or(StandardMetaSchema);
 
 export async function validate(): Promise<void> {
   const draftsDir = path.resolve('drafts');

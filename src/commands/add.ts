@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { mainTemplate } from '../templates/mainTemplate.js';
-import { metaTemplate } from '../templates/metaTemplate.js';
+import { createMetaTemplate } from '../templates/metaTemplate.js';
 
 export async function add(paperName: string): Promise<void> {
   const draftsDir = path.resolve('drafts');
@@ -9,8 +9,10 @@ export async function add(paperName: string): Promise<void> {
 
   await fs.ensureDir(fullPath);
 
+  const metaContent = await createMetaTemplate();
+
   await fs.writeFile(path.join(fullPath, 'main.md'), mainTemplate);
-  await fs.writeFile(path.join(fullPath, 'meta.json'), metaTemplate);
+  await fs.writeJSON(path.join(fullPath, 'meta.json'), metaContent, { spaces: 2 });
 
   console.log(`✅ Created draft template at ${fullPath}`);
 }
