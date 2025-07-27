@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
 import { unixfs } from '@helia/unixfs';
-import { bootstrap } from '@libp2p/bootstrap';
 import fs from 'fs-extra';
 import { createHelia } from 'helia';
 import { CID } from 'multiformats/cid';
@@ -9,7 +8,7 @@ import { z } from 'zod';
 import { ORIGIN_PAPER } from './buildUtils.js';
 import { MetaSchema } from './validate.js';
 
-export async function fetchCommand(cid: string, directoryName: string): Promise<void> {
+export async function fetchCommand(uriOrCid: string, directoryName: string): Promise<void> {
   const papersDir = path.resolve('papers');
   await fs.ensureDir(papersDir);
 
@@ -22,37 +21,7 @@ export async function fetchCommand(cid: string, directoryName: string): Promise<
 
   console.log('🚀 IPFSノードを起動中...');
 
-  // kuuga.ioから追加のマルチアドレスを取得
-  let multiaddrs: string[] = [];
-  try {
-    multiaddrs = await fetch('https://kuuga.io/api/multiaddrs')
-      .then((res) => res.json())
-      .then((json) => z.array(z.string()).parse(json));
-    console.log(`✅ ${multiaddrs.length}個の追加ピアアドレスを取得しました`);
-  } catch {
-    console.log('⚠️  追加ピアアドレスの取得に失敗しました（続行します）');
-  }
-
-  const helia = await createHelia({
-    libp2p: {
-      peerDiscovery: [
-        bootstrap({
-          list: [
-            '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-            '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-            '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
-            '/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8',
-            '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
-            ...multiaddrs,
-          ],
-        }),
-      ],
-      connectionManager: { maxConnections: 100 },
-      connectionGater: {
-        denyDialMultiaddr: () => false,
-      },
-    },
-  });
+  const helia = await createHelia();
   const heliaFs = unixfs(helia);
 
   // ピアに接続されるまで待つ（より長く待機）
@@ -74,7 +43,7 @@ export async function fetchCommand(cid: string, directoryName: string): Promise<
   }
 
   try {
-    let currentCid = cid.replace('ipfs://', '');
+    let currentCid = uriOrCid.replace('ipfs://', '');
     const downloadedPapers = new Set<string>();
     let isFirstCid = true;
 
@@ -108,12 +77,14 @@ export async function fetchCommand(cid: string, directoryName: string): Promise<
         try {
           await Promise.race([
             (async (): Promise<void> => {
-              for await (const entry of heliaFs.ls(cid)) {
-                const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+              // まずstatでCIDのタイプを確認
+              try {
+                const stat = await heliaFs.stat(cid);
 
-                if (entry.type === 'file') {
+                if (stat.type === 'file') {
+                  // 単一ファイルの場合
                   const chunks: Uint8Array[] = [];
-                  for await (const chunk of heliaFs.cat(entry.cid)) {
+                  for await (const chunk of heliaFs.cat(cid)) {
                     chunks.push(chunk);
                   }
                   const content = new Uint8Array(
@@ -124,10 +95,56 @@ export async function fetchCommand(cid: string, directoryName: string): Promise<
                     content.set(chunk, offset);
                     offset += chunk.length;
                   }
-                  entries.push({ path: entryPath, content });
-                } else if (entry.type === 'directory') {
-                  // ディレクトリの場合は再帰的に探索
-                  await fetchDirectory(entry.cid, entryPath);
+                  // ファイル名は不明なので、適切なデフォルト名を使用
+                  entries.push({ path: basePath || 'file', content });
+                } else if (stat.type === 'directory') {
+                  // ディレクトリの場合はlsで中身を探索
+                  for await (const entry of heliaFs.ls(cid)) {
+                    const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+
+                    if (entry.type === 'file') {
+                      const chunks: Uint8Array[] = [];
+                      for await (const chunk of heliaFs.cat(entry.cid)) {
+                        chunks.push(chunk);
+                      }
+                      const content = new Uint8Array(
+                        chunks.reduce((acc, chunk) => acc + chunk.length, 0),
+                      );
+                      let offset = 0;
+                      for (const chunk of chunks) {
+                        content.set(chunk, offset);
+                        offset += chunk.length;
+                      }
+                      entries.push({ path: entryPath, content });
+                    } else if (entry.type === 'directory') {
+                      // ディレクトリの場合は再帰的に探索
+                      await fetchDirectory(entry.cid, entryPath);
+                    }
+                  }
+                }
+              } catch {
+                // statが失敗した場合は、ディレクトリとして試してみる
+                for await (const entry of heliaFs.ls(cid)) {
+                  const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+
+                  if (entry.type === 'file') {
+                    const chunks: Uint8Array[] = [];
+                    for await (const chunk of heliaFs.cat(entry.cid)) {
+                      chunks.push(chunk);
+                    }
+                    const content = new Uint8Array(
+                      chunks.reduce((acc, chunk) => acc + chunk.length, 0),
+                    );
+                    let offset = 0;
+                    for (const chunk of chunks) {
+                      content.set(chunk, offset);
+                      offset += chunk.length;
+                    }
+                    entries.push({ path: entryPath, content });
+                  } else if (entry.type === 'directory') {
+                    // ディレクトリの場合は再帰的に探索
+                    await fetchDirectory(entry.cid, entryPath);
+                  }
                 }
               }
             })(),
@@ -178,42 +195,79 @@ export async function fetchCommand(cid: string, directoryName: string): Promise<
 
       // IPFSゲートウェイからディレクトリ構造を取得する関数
       async function fetchFromGateway(cid: CID, basePath: string, gateway: string): Promise<void> {
-        const url = `${gateway}/api/v0/ls?arg=${cid.toString()}`;
-        const response = await fetch(url);
+        // ゲートウェイ経由でディレクトリを取得する場合、直接アクセスを試みる
+        const dirUrl = `${gateway}/ipfs/${cid.toString()}/`;
+        const dirResponse = await fetch(dirUrl, { method: 'HEAD' });
 
-        if (!response.ok) {
-          throw new Error(`Gateway fetch failed: ${response.statusText}`);
-        }
-
-        const data = z
-          .object({
-            Objects: z.array(
-              z.object({
-                Links: z.array(z.object({ Type: z.number(), Name: z.string(), Hash: z.string() })),
-              }),
-            ),
-          })
-          .parse(await response.json());
-        const links = data.Objects[0].Links;
-
-        for (const link of links) {
-          const entryPath = basePath ? `${basePath}/${link.Name}` : link.Name;
-
-          if (link.Type === 1) {
-            // ファイル
-            const fileUrl = `${gateway}/ipfs/${cid.toString()}/${encodeURIComponent(link.Name)}`;
-            const fileResponse = await fetch(fileUrl);
-
-            if (!fileResponse.ok) {
-              throw new Error(`Failed to fetch file: ${link.Name}`);
+        if (dirResponse.ok && dirResponse.headers.get('x-ipfs-roots')) {
+          // ディレクトリの場合、HTMLディレクトリリストを取得
+          const listResponse = await fetch(dirUrl);
+          if (listResponse.ok) {
+            const html = await listResponse.text();
+            // 簡易的なHTMLパース（リンクを抽出）
+            const linkRegex = /<a href="([^"]+)">([^<]+)<\/a>/g;
+            const links: Array<{ name: string; isDirectory: boolean }> = [];
+            let match;
+            while ((match = linkRegex.exec(html)) !== null) {
+              const name = match[2];
+              if (name !== '../' && name !== './') {
+                links.push({
+                  name: name.endsWith('/') ? name.slice(0, -1) : name,
+                  isDirectory: name.endsWith('/'),
+                });
+              }
             }
 
+            if (links.length === 0) {
+              // 空のディレクトリの場合は何もしない
+              return;
+            }
+
+            // ディレクトリの中身を処理
+            for (const link of links) {
+              const entryPath = basePath ? `${basePath}/${link.name}` : link.name;
+
+              if (!link.isDirectory) {
+                // ファイル
+                const fileUrl = `${gateway}/ipfs/${cid.toString()}/${encodeURIComponent(link.name)}`;
+                const fileResponse = await fetch(fileUrl);
+
+                if (!fileResponse.ok) {
+                  throw new Error(`Failed to fetch file: ${link.name}`);
+                }
+
+                const content = new Uint8Array(await fileResponse.arrayBuffer());
+                entries.push({ path: entryPath, content });
+              } else {
+                // ディレクトリ - 再帰的に取得
+                const subDirUrl = `${gateway}/ipfs/${cid.toString()}/${encodeURIComponent(link.name)}/`;
+                // サブディレクトリのCIDを取得するため、HEADリクエストを送信
+                const subDirResponse = await fetch(subDirUrl, { method: 'HEAD' });
+                const ipfsHash = subDirResponse.headers.get('x-ipfs-path');
+                if (ipfsHash) {
+                  // x-ipfs-pathから CIDを抽出
+                  const cidMatch = ipfsHash.match(/\/ipfs\/([^/]+)/);
+                  if (cidMatch) {
+                    const subCid = CID.parse(cidMatch[1]);
+                    await fetchFromGateway(subCid, entryPath, gateway);
+                  }
+                }
+              }
+            }
+          } else {
+            // ディレクトリリストが取得できない場合は単一ファイルとして扱う
+            throw new Error('Not a directory');
+          }
+        } else {
+          // lsが失敗した場合、単一ファイルとして試す
+          const fileUrl = `${gateway}/ipfs/${cid.toString()}`;
+          const fileResponse = await fetch(fileUrl);
+
+          if (fileResponse.ok) {
             const content = new Uint8Array(await fileResponse.arrayBuffer());
-            entries.push({ path: entryPath, content });
-          } else if (link.Type === 2) {
-            // ディレクトリ
-            const subCid = CID.parse(link.Hash);
-            await fetchFromGateway(subCid, entryPath, gateway);
+            entries.push({ path: basePath || 'file', content });
+          } else {
+            throw new Error(`Gateway fetch failed: Cannot access CID ${cid.toString()}`);
           }
         }
       }

@@ -47,7 +47,7 @@ program.command('pinata').description('papers配下の論文をPinataにアッ�
 
 program
   .command('fetch')
-  .argument('<cid>', '論文のCIDを指定')
+  .argument('<cid>', '論文のCIDまたはIPFSのURIを指定')
   .argument('<directoryName>', 'papers配下に作成するディレクトリ名')
   .description('指定されたCIDの論文とその引用元をIPFSからダウンロードする')
   .action(fetchCommand);
