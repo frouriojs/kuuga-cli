@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { unixfs } from '@helia/unixfs';
 import { bootstrap } from '@libp2p/bootstrap';
 import fs from 'fs-extra';
@@ -46,13 +47,31 @@ export async function fetchCommand(cid: string, directoryName: string): Promise<
           ],
         }),
       ],
+      connectionManager: { maxConnections: 100 },
+      connectionGater: {
+        denyDialMultiaddr: () => false,
+      },
     },
   });
   const heliaFs = unixfs(helia);
 
-  // ピアに接続されるまで少し待つ
+  // ピアに接続されるまで待つ（より長く待機）
   console.log('🔗 IPFSネットワークに接続中...');
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  let peersConnected = false;
+  for (let i = 0; i < 10; i++) {
+    const peers = helia.libp2p.getPeers();
+    if (peers.length > 0) {
+      console.log(`✅ ${peers.length}個のピアに接続しました`);
+      peersConnected = true;
+      break;
+    }
+    console.log(`⏳ ピアへの接続を待機中... (${i + 1}/10)`);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  if (!peersConnected) {
+    console.log('⚠️  ピアへの接続に失敗しました。直接ゲートウェイからのダウンロードを試みます。');
+  }
 
   try {
     let currentCid = cid.replace('ipfs://', '');
@@ -72,11 +91,18 @@ export async function fetchCommand(cid: string, directoryName: string): Promise<
       // IPFSからディレクトリ全体を取得
       const entries: Array<{ path: string; content: Uint8Array }> = [];
 
-      // 再帰的にディレクトリを探索する関数（タイムアウト付き）
+      // 再帰的にディレクトリを探索する関数
       async function fetchDirectory(cid: CID, basePath = ''): Promise<void> {
-        const timeout = 30000; // 30秒のタイムアウト
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Fetch timeout')), timeout);
+        // ピアが接続されていない場合は直接ゲートウェイを使用
+        if (!peersConnected) {
+          await fetchFromGatewayWithRetry(cid, basePath);
+          return;
+        }
+
+        // Heliaでの取得を試みる（短いタイムアウト）
+        const heliaTimeout = 30000; // 30秒のタイムアウト
+        const heliaTimeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Helia timeout')), heliaTimeout);
         });
 
         try {
@@ -105,13 +131,90 @@ export async function fetchCommand(cid: string, directoryName: string): Promise<
                 }
               }
             })(),
-            timeoutPromise,
+            heliaTimeoutPromise,
           ]);
         } catch (error) {
-          if (error instanceof Error && error.message === 'Fetch timeout') {
-            throw new Error(`タイムアウト: CID ${cid.toString()} の取得に時間がかかりすぎています`);
+          if (error instanceof Error && error.message === 'Helia timeout') {
+            console.log(
+              '⚠️  Heliaでの取得がタイムアウトしました。ゲートウェイから取得を試みます...',
+            );
+
+            await fetchFromGatewayWithRetry(cid, basePath);
+          } else {
+            throw error;
           }
-          throw error;
+        }
+      }
+
+      // ゲートウェイからの取得をリトライ付きで実行
+      async function fetchFromGatewayWithRetry(cid: CID, basePath: string): Promise<void> {
+        const gateways = [
+          'https://ipfs.io',
+          'https://dweb.link',
+          'https://gateway.ipfs.io',
+          'https://cloudflare-ipfs.com',
+        ];
+
+        let lastError: Error | null = null;
+
+        for (const gateway of gateways) {
+          for (let retry = 0; retry < 3; retry++) {
+            try {
+              console.log(`🌐 ${gateway} から取得中... (試行 ${retry + 1}/3)`);
+              await fetchFromGateway(cid, basePath, gateway);
+              return; // 成功したら終了
+            } catch (error) {
+              lastError = error as Error;
+              console.log(`❌ ${gateway} からの取得に失敗しました: ${lastError.message}`);
+              if (retry < 2) {
+                await new Promise((resolve) => setTimeout(resolve, 2000 * (retry + 1))); // リトライ前に待機
+              }
+            }
+          }
+        }
+
+        throw new Error(`すべてのゲートウェイからの取得に失敗しました: CID ${cid.toString()}`);
+      }
+
+      // IPFSゲートウェイからディレクトリ構造を取得する関数
+      async function fetchFromGateway(cid: CID, basePath: string, gateway: string): Promise<void> {
+        const url = `${gateway}/api/v0/ls?arg=${cid.toString()}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Gateway fetch failed: ${response.statusText}`);
+        }
+
+        const data = z
+          .object({
+            Objects: z.array(
+              z.object({
+                Links: z.array(z.object({ Type: z.number(), Name: z.string(), Hash: z.string() })),
+              }),
+            ),
+          })
+          .parse(await response.json());
+        const links = data.Objects[0].Links;
+
+        for (const link of links) {
+          const entryPath = basePath ? `${basePath}/${link.Name}` : link.Name;
+
+          if (link.Type === 1) {
+            // ファイル
+            const fileUrl = `${gateway}/ipfs/${cid.toString()}/${encodeURIComponent(link.Name)}`;
+            const fileResponse = await fetch(fileUrl);
+
+            if (!fileResponse.ok) {
+              throw new Error(`Failed to fetch file: ${link.Name}`);
+            }
+
+            const content = new Uint8Array(await fileResponse.arrayBuffer());
+            entries.push({ path: entryPath, content });
+          } else if (link.Type === 2) {
+            // ディレクトリ
+            const subCid = CID.parse(link.Hash);
+            await fetchFromGateway(subCid, entryPath, gateway);
+          }
         }
       }
 
