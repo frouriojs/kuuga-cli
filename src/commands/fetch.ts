@@ -22,7 +22,7 @@ export async function fetch(cid: string, directoryName: string): Promise<void> {
   const heliaFs = unixfs(helia);
 
   try {
-    let currentCid = cid.startsWith('ipfs://') ? cid.slice(7) : cid;
+    let currentCid = cid.replace('ipfs://', '');
     const downloadedPapers = new Set<string>();
     let isFirstCid = true;
 
@@ -39,21 +39,31 @@ export async function fetch(cid: string, directoryName: string): Promise<void> {
       // IPFSからディレクトリ全体を取得
       const entries: Array<{ path: string; content: Uint8Array }> = [];
 
-      for await (const entry of heliaFs.ls(cidObj)) {
-        if (entry.type === 'file') {
-          const chunks: Uint8Array[] = [];
-          for await (const chunk of heliaFs.cat(entry.cid)) {
-            chunks.push(chunk);
+      // 再帰的にディレクトリを探索する関数
+      async function fetchDirectory(cid: CID, basePath = ''): Promise<void> {
+        for await (const entry of heliaFs.ls(cid)) {
+          const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+
+          if (entry.type === 'file') {
+            const chunks: Uint8Array[] = [];
+            for await (const chunk of heliaFs.cat(entry.cid)) {
+              chunks.push(chunk);
+            }
+            const content = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+            let offset = 0;
+            for (const chunk of chunks) {
+              content.set(chunk, offset);
+              offset += chunk.length;
+            }
+            entries.push({ path: entryPath, content });
+          } else if (entry.type === 'directory') {
+            // ディレクトリの場合は再帰的に探索
+            await fetchDirectory(entry.cid, entryPath);
           }
-          const content = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
-          let offset = 0;
-          for (const chunk of chunks) {
-            content.set(chunk, offset);
-            offset += chunk.length;
-          }
-          entries.push({ path: entry.name, content });
         }
       }
+
+      await fetchDirectory(cidObj);
 
       // バージョン番号を取得
       const metaEntry = entries.find((e) => e.path === 'meta.json');
