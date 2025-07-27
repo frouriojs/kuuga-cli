@@ -36,8 +36,8 @@ jobs:
             git push
           fi
 
-      # - name: Upload Papers to Pinata
-      #   env:
-      #     PINATA_JWT: \${{ secrets.PINATA_JWT }}
-      #   run: npm run pinata
+      - name: Upload Papers to Pinata
+        env:
+          PINATA_JWT: \${{ secrets.PINATA_JWT }}
+        run: npm run pinata
 `;

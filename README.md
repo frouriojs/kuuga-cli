@@ -140,6 +140,27 @@ export PINATA_GATEWAY='your-custom-gateway.mypinata.cloud'
 
 アップロードされたファイルは、`{バージョン番号}_{論文名}`の形式で保存されます（例：`001_my-paper`）。
 
+### 論文のダウンロード
+
+指定されたCIDの論文とその引用元をIPFSからダウンロードします：
+
+```bash
+kuuga fetch <cid> <directoryName>
+```
+
+- `<cid>`: ダウンロードする論文のCID（`ipfs://`プレフィックスはオプション）
+- `<directoryName>`: papers配下に作成するディレクトリ名
+
+例：
+
+```bash
+kuuga fetch bafybeie37nnusfxejtmkfi2l2xb6c7qqn74ihgcbqxzvvbytnjstgnznkq my-downloaded-paper
+```
+
+このコマンドは、指定されたCIDの論文をダウンロードし、その論文の`previousPaper`フィールドを辿って引用元の論文も再帰的にダウンロードします。KUUGAプロトコルの起源論文に到達するまでダウンロードを続けます。
+
+ダウンロードされた論文は`papers/{directoryName}/{バージョン番号}_{CID}/`の形式で保存されます。
+
 ## 自動公開とピン留め（GitHub Actions + Dockerコンテナ）
 
 - `main`ブランチにPushすると、GHAが差分を検知して論文ディレクトリを自動生成・コミットします。
