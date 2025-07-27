@@ -1,4 +1,5 @@
 import { unixfs } from '@helia/unixfs';
+import { bootstrap } from '@libp2p/bootstrap';
 import fs from 'fs-extra';
 import { createHelia } from 'helia';
 import { CID } from 'multiformats/cid';
@@ -7,7 +8,7 @@ import { z } from 'zod';
 import { ORIGIN_PAPER } from './buildUtils.js';
 import { MetaSchema } from './validate.js';
 
-export async function fetch(cid: string, directoryName: string): Promise<void> {
+export async function fetchCommand(cid: string, directoryName: string): Promise<void> {
   const papersDir = path.resolve('papers');
   await fs.ensureDir(papersDir);
 
@@ -18,8 +19,40 @@ export async function fetch(cid: string, directoryName: string): Promise<void> {
   const draftsDir = path.resolve('drafts');
   await fs.ensureDir(draftsDir);
 
-  const helia = await createHelia();
+  console.log('🚀 IPFSノードを起動中...');
+
+  // kuuga.ioから追加のマルチアドレスを取得
+  let multiaddrs: string[] = [];
+  try {
+    multiaddrs = await fetch('https://kuuga.io/api/multiaddrs')
+      .then((res) => res.json())
+      .then((json) => z.array(z.string()).parse(json));
+    console.log(`✅ ${multiaddrs.length}個の追加ピアアドレスを取得しました`);
+  } catch {
+    console.log('⚠️  追加ピアアドレスの取得に失敗しました（続行します）');
+  }
+
+  const helia = await createHelia({
+    libp2p: {
+      peerDiscovery: [
+        bootstrap({
+          list: [
+            '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+            '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+            '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+            '/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8',
+            '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
+            ...multiaddrs,
+          ],
+        }),
+      ],
+    },
+  });
   const heliaFs = unixfs(helia);
+
+  // ピアに接続されるまで少し待つ
+  console.log('🔗 IPFSネットワークに接続中...');
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   try {
     let currentCid = cid.replace('ipfs://', '');
@@ -39,27 +72,46 @@ export async function fetch(cid: string, directoryName: string): Promise<void> {
       // IPFSからディレクトリ全体を取得
       const entries: Array<{ path: string; content: Uint8Array }> = [];
 
-      // 再帰的にディレクトリを探索する関数
+      // 再帰的にディレクトリを探索する関数（タイムアウト付き）
       async function fetchDirectory(cid: CID, basePath = ''): Promise<void> {
-        for await (const entry of heliaFs.ls(cid)) {
-          const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+        const timeout = 30000; // 30秒のタイムアウト
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Fetch timeout')), timeout);
+        });
 
-          if (entry.type === 'file') {
-            const chunks: Uint8Array[] = [];
-            for await (const chunk of heliaFs.cat(entry.cid)) {
-              chunks.push(chunk);
-            }
-            const content = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
-            let offset = 0;
-            for (const chunk of chunks) {
-              content.set(chunk, offset);
-              offset += chunk.length;
-            }
-            entries.push({ path: entryPath, content });
-          } else if (entry.type === 'directory') {
-            // ディレクトリの場合は再帰的に探索
-            await fetchDirectory(entry.cid, entryPath);
+        try {
+          await Promise.race([
+            (async (): Promise<void> => {
+              for await (const entry of heliaFs.ls(cid)) {
+                const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+
+                if (entry.type === 'file') {
+                  const chunks: Uint8Array[] = [];
+                  for await (const chunk of heliaFs.cat(entry.cid)) {
+                    chunks.push(chunk);
+                  }
+                  const content = new Uint8Array(
+                    chunks.reduce((acc, chunk) => acc + chunk.length, 0),
+                  );
+                  let offset = 0;
+                  for (const chunk of chunks) {
+                    content.set(chunk, offset);
+                    offset += chunk.length;
+                  }
+                  entries.push({ path: entryPath, content });
+                } else if (entry.type === 'directory') {
+                  // ディレクトリの場合は再帰的に探索
+                  await fetchDirectory(entry.cid, entryPath);
+                }
+              }
+            })(),
+            timeoutPromise,
+          ]);
+        } catch (error) {
+          if (error instanceof Error && error.message === 'Fetch timeout') {
+            throw new Error(`タイムアウト: CID ${cid.toString()} の取得に時間がかかりすぎています`);
           }
+          throw error;
         }
       }
 
@@ -129,6 +181,12 @@ export async function fetch(cid: string, directoryName: string): Promise<void> {
     console.log('✅ すべての論文のダウンロードが完了しました');
   } catch (error) {
     console.error('❌ ダウンロード中にエラーが発生しました:', error);
+    if (error instanceof Error && error.message.includes('タイムアウト')) {
+      console.log('💡 ヒント: IPFSネットワークへの接続に問題がある可能性があります。');
+      console.log('   - インターネット接続を確認してください');
+      console.log('   - ファイアウォールがIPFS通信をブロックしていないか確認してください');
+      console.log('   - しばらく待ってから再度お試しください');
+    }
     process.exit(1);
   } finally {
     await helia.stop();

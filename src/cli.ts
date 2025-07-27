@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import { add } from './commands/add.js';
 import { build } from './commands/build.js';
-import { fetch } from './commands/fetch.js';
+import { fetchCommand } from './commands/fetch.js';
 import { genKey } from './commands/gen-key.js';
 import { init } from './commands/init.js';
 import { pin } from './commands/pin.js';
@@ -50,6 +50,6 @@ program
   .argument('<cid>', '論文のCIDを指定')
   .argument('<directoryName>', 'papers配下に作成するディレクトリ名')
   .description('指定されたCIDの論文とその引用元をIPFSからダウンロードする')
-  .action(fetch);
+  .action(fetchCommand);
 
 program.parse();
