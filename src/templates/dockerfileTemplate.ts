@@ -1,12 +1,3 @@
-import fs from 'fs-extra';
-import path from 'path';
-
-const packageJsonPath = path.join(
-  path.dirname(new URL(import.meta.url).pathname),
-  '../../package.json',
-);
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8')) as Record<string, string>;
-
 export const dockerfileTemplate = `FROM node:22-slim
 
 RUN apt-get update && \\
@@ -27,7 +18,7 @@ ARG KUUGA_KEY
 COPY . .
 RUN echo $KUUGA_KEY
 RUN ipfs init
-RUN npm i -g kuuga-cli@${packageJson.version}
+RUN npm i -g kuuga-cli@${process.env.npm_package_version}
 
 EXPOSE 4001
 
